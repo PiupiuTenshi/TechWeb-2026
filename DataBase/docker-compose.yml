@@ -1,0 +1,17 @@
+version: '4.47'
+
+services:
+  techshop-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: techshop-sql-server
+    ports:
+      - "1434:1433" 
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=ToiThatKhonNan@123
+    volumes:
+      - sql_data:/var/opt/mssql 
+    restart: always
+
+volumes:
+  sql_data:

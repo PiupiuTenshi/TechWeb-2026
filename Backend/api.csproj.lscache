@@ -55,11 +55,15 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 /warnaserror+:NU1605,SYSLIB0011
 
 [sourceFiles]
-Controllers/AuthController.cs
+Controllers/
+ AuthController.cs
+ CartController.cs
 Data/
  AppDbContext.cs
  DbSeeder.cs
-DTOs/AuthDto.cs
+DTOs/
+ AuthDto.cs
+ CartDto.cs
 Migrations/
  20260516183142_InitialCreate.cs
  20260516183142_InitialCreate.Designer.cs
@@ -67,8 +71,13 @@ Migrations/
  20260516185047_UpdateUserSchema_AddPhoneAndRole.Designer.cs
  20260516190102_UpdateGoogleAuth.cs
  20260516190102_UpdateGoogleAuth.Designer.cs
+ 20260516204912_UpdateCartSchema.cs
+ 20260516204912_UpdateCartSchema.Designer.cs
  AppDbContextModelSnapshot.cs
-Models/User.cs
+Models/
+ Cart.cs
+ CartItems.cs
+ User.cs
 obj/Debug/net10.0/
  .NETCoreApp,Version=v10.0.AssemblyAttributes.cs
  api.AssemblyInfo.cs
