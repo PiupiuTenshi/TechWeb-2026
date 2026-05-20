@@ -1,0 +1,50 @@
+/* ===========================
+   LaptopPage
+   =========================== */
+
+.laptop-page {
+  padding-top: 8px;
+  padding-bottom: 32px;
+}
+
+.laptop-page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.laptop-page-section-heading {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  margin-top: 4px;
+}
+
+/* Load-more button area */
+.laptop-page-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.laptop-page-load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 32px;
+  background: var(--white);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.laptop-page-load-more-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+}
