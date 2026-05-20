@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { phones } from '../data/products'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
 import BrandCardList from '../components/BrandCard/BrandCardList'
@@ -23,6 +24,52 @@ const PHONE_BRANDS = [
   { name: 'Oppo',    logo: logoOppo    },
 ]
 
+// Filter group definitions for phones
+const PHONE_FILTER_GROUPS = [
+  {
+    key: 'price',
+    label: 'Giá',
+    options: [
+      { value: 'under-2',  label: 'Dưới 2 triệu'    },
+      { value: '2-4',      label: 'Từ 2 - 4 triệu'  },
+      { value: '4-7',      label: 'Từ 4 - 7 triệu'  },
+      { value: '7-13',     label: 'Từ 7 - 13 triệu' },
+      { value: '13-20',    label: 'Từ 13 - 20 triệu'},
+      { value: 'over-20',  label: 'Trên 20 triệu'   },
+    ],
+  },
+  {
+    key: 'storage',
+    label: 'Bộ nhớ trong',
+    options: [
+      { value: '128',  label: '≤ 128 GB' },
+      { value: '256',  label: '256 GB'   },
+      { value: '512',  label: '512 GB'   },
+      { value: '1024', label: '1 TB'     },
+    ],
+  },
+  {
+    key: 'ram',
+    label: 'Ram',
+    options: [
+      { value: '6',  label: '6 GB'  },
+      { value: '8',  label: '8 GB'  },
+      { value: '12', label: '12 GB' },
+      { value: '16', label: '16 GB' },
+    ],
+  },
+]
+
+// Price range helper
+const PRICE_RANGES = {
+  'under-2':  [0,          2_000_000],
+  '2-4':      [2_000_000,  4_000_000],
+  '4-7':      [4_000_000,  7_000_000],
+  '7-13':     [7_000_000,  13_000_000],
+  '13-20':    [13_000_000, 20_000_000],
+  'over-20':  [20_000_000, Infinity],
+}
+
 const ITEMS_PER_PAGE = 20
 
 const breadcrumbItems = [
@@ -30,15 +77,45 @@ const breadcrumbItems = [
   { label: 'Điện thoại' },
 ]
 
+const EMPTY_FILTERS = { price: [], storage: [], ram: [] }
+
+function matchesFilters(product, activeFilters) {
+  // Price
+  if (activeFilters.price.length > 0) {
+    const inRange = activeFilters.price.some(key => {
+      const [min, max] = PRICE_RANGES[key]
+      return product.salePrice >= min && product.salePrice < max
+    })
+    if (!inRange) return false
+  }
+  // Storage
+  if (activeFilters.storage.length > 0) {
+    if (!activeFilters.storage.includes(String(product.storage))) return false
+  }
+  // Ram
+  if (activeFilters.ram.length > 0) {
+    if (!activeFilters.ram.includes(String(product.ram))) return false
+  }
+  return true
+}
+
 function PhonePage() {
-  const [activeBrand, setActiveBrand] = useState('')
-  const [sortOrder, setSortOrder] = useState('')
+  const location = useLocation()
+  const [activeBrand, setActiveBrand]   = useState(location.state?.selectedBrand || '')
+  const [sortOrder, setSortOrder]       = useState('')
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
+  const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS)
+
+  useEffect(() => {
+    setActiveBrand(location.state?.selectedBrand || '')
+  }, [location.state?.selectedBrand])
 
   const filtered = useMemo(() => {
     let result = activeBrand
       ? phones.filter(p => p.brand === activeBrand)
       : [...phones]
+
+    result = result.filter(p => matchesFilters(p, activeFilters))
 
     if (sortOrder === 'asc') {
       result.sort((a, b) => a.salePrice - b.salePrice)
@@ -47,17 +124,31 @@ function PhonePage() {
     }
 
     return result
-  }, [activeBrand, sortOrder])
+  }, [activeBrand, sortOrder, activeFilters])
 
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
 
-  const handleLoadMore = () => {
-    setVisibleCount(prev => prev + ITEMS_PER_PAGE)
-  }
+  const handleLoadMore = () => setVisibleCount(prev => prev + ITEMS_PER_PAGE)
 
   const handleBrandChange = (brand) => {
     setActiveBrand(brand)
+    setVisibleCount(ITEMS_PER_PAGE)
+  }
+
+  const handleFilterChange = (groupKey, value) => {
+    setActiveFilters(prev => {
+      const current = prev[groupKey] || []
+      const next = current.includes(value)
+        ? current.filter(v => v !== value)
+        : [...current, value]
+      return { ...prev, [groupKey]: next }
+    })
+    setVisibleCount(ITEMS_PER_PAGE)
+  }
+
+  const handleClearAll = () => {
+    setActiveFilters(EMPTY_FILTERS)
     setVisibleCount(ITEMS_PER_PAGE)
   }
 
@@ -73,7 +164,12 @@ function PhonePage() {
         onBrandChange={handleBrandChange}
       />
 
-      <FilterBar />
+      <FilterBar
+        filterGroups={PHONE_FILTER_GROUPS}
+        activeFilters={activeFilters}
+        onFilterChange={handleFilterChange}
+        onClearAll={handleClearAll}
+      />
 
       <SortBar
         sortOrder={sortOrder}

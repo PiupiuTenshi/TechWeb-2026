@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { phones, laptops, accessories } from '../data/products'
 import ProductSection from '../components/ProductSection/ProductSection'
 
@@ -7,9 +7,7 @@ const LAPTOP_TABS = ['MacBook', 'Lenovo', 'Dell', 'Asus', 'Acer', 'Msi']
 const ACCESSORY_TABS = ['Bàn phím', 'Tai nghe', 'Chuột']
 
 function HomePage() {
-  const [phoneTab, setPhoneTab] = useState('')
-  const [laptopTab, setLaptopTab] = useState('')
-  const [accessoryTab, setAccessoryTab] = useState('')
+  const navigate = useNavigate()
 
   return (
     <div className="container">
@@ -17,8 +15,8 @@ function HomePage() {
         title="Điện thoại"
         tabs={PHONE_TABS}
         products={phones}
-        activeTab={phoneTab}
-        onTabChange={setPhoneTab}
+        activeTab=""
+        onTabChange={(tab) => navigate('/dien-thoai', { state: { selectedBrand: tab } })}
         maxVisible={10}
         linkTo="/dien-thoai"
       />
@@ -27,8 +25,8 @@ function HomePage() {
         title="Laptop"
         tabs={LAPTOP_TABS}
         products={laptops}
-        activeTab={laptopTab}
-        onTabChange={setLaptopTab}
+        activeTab=""
+        onTabChange={(tab) => navigate('/laptop', { state: { selectedBrand: tab } })}
         maxVisible={10}
         linkTo="/laptop"
       />
@@ -37,9 +35,10 @@ function HomePage() {
         title="Phụ kiện"
         tabs={ACCESSORY_TABS}
         products={accessories}
-        activeTab={accessoryTab}
-        onTabChange={setAccessoryTab}
+        activeTab=""
+        onTabChange={(tab) => navigate('/phu-kien', { state: { selectedBrand: tab } })}
         maxVisible={15}
+        linkTo="/phu-kien"
       />
     </div>
   )
