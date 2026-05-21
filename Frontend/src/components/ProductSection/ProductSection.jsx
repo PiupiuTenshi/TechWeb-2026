@@ -13,8 +13,9 @@ import './ProductSection.css'
  *   onTabChange{function} — called with the newly selected tab label
  *   maxVisible {number}   — max cards to show (default 10)
  *   linkTo     {string}   — optional route to navigate to when clicking the title
+ *   linkable   {boolean}  — whether cards navigate to detail page (default true)
  */
-function ProductSection({ title, tabs, products, activeTab, onTabChange, maxVisible = 10, linkTo }) {
+function ProductSection({ title, tabs, products, activeTab, onTabChange, maxVisible = 10, linkTo, linkable = true }) {
   const filtered = activeTab
     ? products.filter(p => p.brand === activeTab)
     : products
@@ -52,7 +53,7 @@ function ProductSection({ title, tabs, products, activeTab, onTabChange, maxVisi
 
       <div className="product-section-grid">
         {visible.map(product => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product.id} product={product} linkable={linkable} />
         ))}
       </div>
     </section>
@@ -60,4 +61,3 @@ function ProductSection({ title, tabs, products, activeTab, onTabChange, maxVisi
 }
 
 export default ProductSection
-

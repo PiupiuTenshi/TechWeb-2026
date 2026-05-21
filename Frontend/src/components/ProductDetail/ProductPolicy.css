@@ -1,0 +1,45 @@
+/* ===========================
+   ProductPolicy
+   =========================== */
+
+.product-policy {
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+}
+
+.product-policy-title {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.product-policy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.product-policy-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.product-policy-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: block;
+}
+
+.product-policy-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}

@@ -1,0 +1,132 @@
+/* ===========================
+   ProductDetailHero
+   =========================== */
+
+.detail-hero {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 40px;
+  align-items: flex-start;
+  padding: 24px 0 32px;
+}
+
+/* Image */
+.detail-hero-img-wrap {
+  position: sticky;
+  top: 80px;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.detail-hero-img-wrap img {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  transition: transform 0.3s ease;
+}
+
+.detail-hero-img-wrap img:hover {
+  transform: scale(1.04);
+}
+
+/* Info */
+.detail-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-hero-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.detail-hero-prices {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-hero-sale-price {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+.detail-hero-original-price {
+  font-size: 16px;
+  color: var(--text-original);
+  text-decoration: line-through;
+}
+
+/* Buttons */
+.detail-hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.detail-hero-btn-buy {
+  padding: 12px 32px;
+  background: var(--primary);
+  color: var(--white);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+  letter-spacing: 0.2px;
+}
+
+.detail-hero-btn-buy:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.detail-hero-btn-cart {
+  padding: 12px 28px;
+  background: var(--white);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), transform var(--transition);
+}
+
+.detail-hero-btn-cart:hover {
+  background: #fff0f2;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .detail-hero {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .detail-hero-img-wrap {
+    position: static;
+    min-height: 220px;
+  }
+
+  .detail-hero-sale-price {
+    font-size: 22px;
+  }
+}

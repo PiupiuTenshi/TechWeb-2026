@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useState, useMemo } from 'react'
 import { laptops } from '../data/products'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
 import BrandCardList from '../components/BrandCard/BrandCardList'
@@ -17,12 +16,12 @@ import logoAcer    from '../assets/logo_acer.webp'
 import logoMsi     from '../assets/logo_msi.webp'
 
 const LAPTOP_BRANDS = [
-  { name: 'MacBook', logo: logoMacbook },
-  { name: 'Lenovo',  logo: logoLenovo  },
-  { name: 'Dell',    logo: logoDell    },
-  { name: 'Asus',    logo: logoAsus    },
-  { name: 'Acer',    logo: logoAcer    },
-  { name: 'Msi',     logo: logoMsi     },
+  { name: 'MacBook', logo: logoMacbook, path: '/laptop/macbook' },
+  { name: 'Lenovo',  logo: logoLenovo,  path: '/laptop/lenovo'  },
+  { name: 'Dell',    logo: logoDell,    path: '/laptop/dell'    },
+  { name: 'Asus',    logo: logoAsus,    path: '/laptop/asus'    },
+  { name: 'Acer',    logo: logoAcer,    path: '/laptop/acer'    },
+  { name: 'Msi',     logo: logoMsi,     path: '/laptop/msi'     },
 ]
 
 // Filter group definitions for laptops
@@ -103,23 +102,14 @@ function matchesFilters(product, activeFilters) {
 }
 
 function LaptopPage() {
-  const location = useLocation()
-  const [activeBrand, setActiveBrand]     = useState(location.state?.selectedBrand || '')
   const [activeCategory, setActiveCategory] = useState('')
-  const [sortOrder, setSortOrder]         = useState('')
-  const [visibleCount, setVisibleCount]   = useState(ITEMS_PER_PAGE)
-  const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS)
-
-  useEffect(() => {
-    setActiveBrand(location.state?.selectedBrand || '')
-  }, [location.state?.selectedBrand])
+  const [sortOrder, setSortOrder]           = useState('')
+  const [visibleCount, setVisibleCount]     = useState(ITEMS_PER_PAGE)
+  const [activeFilters, setActiveFilters]   = useState(EMPTY_FILTERS)
 
   const filtered = useMemo(() => {
     let result = [...laptops]
 
-    if (activeBrand) {
-      result = result.filter(p => p.brand === activeBrand)
-    }
     if (activeCategory) {
       result = result.filter(p => p.category === activeCategory)
     }
@@ -132,17 +122,12 @@ function LaptopPage() {
     }
 
     return result
-  }, [activeBrand, activeCategory, sortOrder, activeFilters])
+  }, [activeCategory, sortOrder, activeFilters])
 
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
 
   const handleLoadMore = () => setVisibleCount(prev => prev + ITEMS_PER_PAGE)
-
-  const handleBrandChange = (brand) => {
-    setActiveBrand(brand)
-    setVisibleCount(ITEMS_PER_PAGE)
-  }
 
   const handleCategoryChange = (category) => {
     setActiveCategory(category)
@@ -173,8 +158,8 @@ function LaptopPage() {
 
       <BrandCardList
         brands={LAPTOP_BRANDS}
-        activeBrand={activeBrand}
-        onBrandChange={handleBrandChange}
+        activeBrand=""
+        onBrandChange={() => {}}
       />
 
       <h2 className="laptop-page-section-heading">Chọn theo nhu cầu</h2>

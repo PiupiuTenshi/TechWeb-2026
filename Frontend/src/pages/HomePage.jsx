@@ -16,7 +16,7 @@ function HomePage() {
         tabs={PHONE_TABS}
         products={phones}
         activeTab=""
-        onTabChange={(tab) => navigate('/dien-thoai', { state: { selectedBrand: tab } })}
+        onTabChange={(tab) => navigate(`/dien-thoai/${tab.toLowerCase()}`)}
         maxVisible={10}
         linkTo="/dien-thoai"
       />
@@ -26,7 +26,7 @@ function HomePage() {
         tabs={LAPTOP_TABS}
         products={laptops}
         activeTab=""
-        onTabChange={(tab) => navigate('/laptop', { state: { selectedBrand: tab } })}
+        onTabChange={(tab) => navigate(`/laptop/${tab.toLowerCase()}`)}
         maxVisible={10}
         linkTo="/laptop"
       />

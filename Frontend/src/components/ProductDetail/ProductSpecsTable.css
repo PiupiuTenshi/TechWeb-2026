@@ -1,0 +1,68 @@
+/* ===========================
+   ProductSpecsTable
+   =========================== */
+
+.specs-section {
+  margin-top: 32px;
+}
+
+.specs-section-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.specs-subsection-title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  margin-top: 20px;
+}
+
+.specs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.specs-table tr:nth-child(odd) {
+  background: #f7f7f7;
+}
+
+.specs-table tr:nth-child(even) {
+  background: var(--white);
+}
+
+.specs-table td {
+  padding: 9px 14px;
+  vertical-align: top;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.specs-table tr:last-child td {
+  border-bottom: none;
+}
+
+.specs-table .spec-label {
+  width: 34%;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.specs-table .spec-value {
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+/* Highlight label with brand color when it's a key spec */
+.specs-table .spec-label--highlight {
+  color: var(--primary);
+  font-weight: 600;
+}

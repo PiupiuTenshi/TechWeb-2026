@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import './ProductCard.css'
 
 function formatPrice(price) {
@@ -15,14 +16,21 @@ function StarRating({ rating }) {
   )
 }
 
-function ProductCard({ product }) {
+/**
+ * ProductCard
+ *
+ * Props:
+ *   product   {object}  — product data
+ *   linkable  {boolean} — if true (default), wraps card in a Link to /san-pham/:id
+ */
+function ProductCard({ product, linkable = true }) {
   const {
     id, name, image,
     originalPrice, salePrice, discount,
     rating, ratingCount, installment,
   } = product
 
-  return (
+  const inner = (
     <article className="product-card" id={`product-card-${id}`}>
       {discount && <span className="product-card-badge">{discount}</span>}
 
@@ -46,6 +54,14 @@ function ProductCard({ product }) {
         <span className="product-card-installment">{installment}</span>
       )}
     </article>
+  )
+
+  if (!linkable) return inner
+
+  return (
+    <Link to={`/san-pham/${id}`} className="product-card-link" aria-label={name}>
+      {inner}
+    </Link>
   )
 }
 

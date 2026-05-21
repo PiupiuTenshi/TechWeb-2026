@@ -1,5 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useState, useMemo } from 'react'
 import { phones } from '../data/products'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
 import BrandCardList from '../components/BrandCard/BrandCardList'
@@ -16,12 +15,12 @@ import logoRealme  from '../assets/logo_realme.webp'
 import logoOppo    from '../assets/logo_oppo.webp'
 
 const PHONE_BRANDS = [
-  { name: 'iPhone',  logo: logoIphone  },
-  { name: 'Samsung', logo: logoSamsung },
-  { name: 'Xiaomi',  logo: logoXiaomi  },
-  { name: 'Vivo',    logo: logoVivo    },
-  { name: 'Realme',  logo: logoRealme  },
-  { name: 'Oppo',    logo: logoOppo    },
+  { name: 'iPhone',  logo: logoIphone,  path: '/dien-thoai/iphone'  },
+  { name: 'Samsung', logo: logoSamsung, path: '/dien-thoai/samsung'  },
+  { name: 'Xiaomi',  logo: logoXiaomi,  path: '/dien-thoai/xiaomi'   },
+  { name: 'Vivo',    logo: logoVivo,    path: '/dien-thoai/vivo'     },
+  { name: 'Realme',  logo: logoRealme,  path: '/dien-thoai/realme'   },
+  { name: 'Oppo',    logo: logoOppo,    path: '/dien-thoai/oppo'     },
 ]
 
 // Filter group definitions for phones
@@ -100,20 +99,12 @@ function matchesFilters(product, activeFilters) {
 }
 
 function PhonePage() {
-  const location = useLocation()
-  const [activeBrand, setActiveBrand]   = useState(location.state?.selectedBrand || '')
-  const [sortOrder, setSortOrder]       = useState('')
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
+  const [sortOrder, setSortOrder]         = useState('')
+  const [visibleCount, setVisibleCount]   = useState(ITEMS_PER_PAGE)
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS)
 
-  useEffect(() => {
-    setActiveBrand(location.state?.selectedBrand || '')
-  }, [location.state?.selectedBrand])
-
   const filtered = useMemo(() => {
-    let result = activeBrand
-      ? phones.filter(p => p.brand === activeBrand)
-      : [...phones]
+    let result = [...phones]
 
     result = result.filter(p => matchesFilters(p, activeFilters))
 
@@ -124,17 +115,12 @@ function PhonePage() {
     }
 
     return result
-  }, [activeBrand, sortOrder, activeFilters])
+  }, [sortOrder, activeFilters])
 
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
 
   const handleLoadMore = () => setVisibleCount(prev => prev + ITEMS_PER_PAGE)
-
-  const handleBrandChange = (brand) => {
-    setActiveBrand(brand)
-    setVisibleCount(ITEMS_PER_PAGE)
-  }
 
   const handleFilterChange = (groupKey, value) => {
     setActiveFilters(prev => {
@@ -160,8 +146,8 @@ function PhonePage() {
 
       <BrandCardList
         brands={PHONE_BRANDS}
-        activeBrand={activeBrand}
-        onBrandChange={handleBrandChange}
+        activeBrand=""
+        onBrandChange={() => {}}
       />
 
       <FilterBar

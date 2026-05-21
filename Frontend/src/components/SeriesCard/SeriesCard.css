@@ -1,0 +1,66 @@
+/* ===========================
+   SeriesCard + SeriesCardList
+   =========================== */
+
+.series-card-list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0 16px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  flex-wrap: wrap;
+}
+
+.series-card-list::-webkit-scrollbar {
+  height: 4px;
+}
+.series-card-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* Single series card — pill/tab style matching reference screenshot */
+.series-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  background: var(--white);
+  border: 2px solid var(--border-color);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.series-card:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.series-card--active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+  box-shadow: 0 2px 8px rgba(230, 0, 18, 0.25);
+}
+
+.series-card--active:hover {
+  background: var(--primary-dark, #c0000f);
+  border-color: var(--primary-dark, #c0000f);
+  color: var(--white);
+}
+
+@media (max-width: 768px) {
+  .series-card {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+}
