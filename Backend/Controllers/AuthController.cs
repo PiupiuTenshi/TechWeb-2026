@@ -1,11 +1,14 @@
-using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TechShop.Backend.Data;
-using TechShop.Backend.Models;
 using TechShop.Backend.DTOs;
+using TechShop.Backend.DTOs.Common;
+using TechShop.Backend.Models;
 
 namespace TechShop.Backend.Controllers;
 
@@ -25,53 +28,139 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDto dto)
     {
-        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
-            return BadRequest("Email đã tồn tại.");
+        var email = dto.Email.Trim().ToLowerInvariant();
+        if (await _context.Users.AnyAsync(u => u.Email == email))
+        {
+            return BadRequest(ApiResponse<object>.Fail("EMAIL_EXISTS", "Email da ton tai."));
+        }
+
+        var customerRoleId = await _context.Roles
+            .Where(x => x.RoleName == "Customer")
+            .Select(x => x.RoleId)
+            .FirstOrDefaultAsync();
 
         var user = new User
         {
-            Email = dto.Email,
-            FullName = dto.FullName,
+            Email = email,
+            FullName = dto.FullName.Trim(),
+            Phone = dto.Phone,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            RoleId = 2 // Customer
+            RoleId = customerRoleId == 0 ? 3 : customerRoleId
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-        return Ok("Đăng ký thành công.");
+
+        return Ok(ApiResponse<object>.Ok(ToUserDto(user, "Customer"), "Dang ky thanh cong."));
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+        var email = dto.Email.Trim().ToLowerInvariant();
+        var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
         if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-            return Unauthorized("Email hoặc mật khẩu không đúng.");
+        {
+            return Unauthorized(ApiResponse<object>.Fail("INVALID_CREDENTIALS", "Email hoac mat khau khong dung."));
+        }
 
-        var token = GenerateJwtToken(user);
-        return Ok(new { AccessToken = token, User = new { user.FullName, RoleId = user.RoleId } });
+        var accessToken = GenerateJwtToken(user);
+        var refreshToken = CreateRefreshToken(user.UserId);
+        _context.RefreshTokens.Add(refreshToken);
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            accessToken,
+            refreshToken = refreshToken.Token,
+            user = ToUserDto(user, user.Role?.RoleName ?? "Customer")
+        }));
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(RefreshTokenDto dto)
+    {
+        var existing = await _context.RefreshTokens
+            .Include(x => x.User)
+            .ThenInclude(x => x!.Role)
+            .FirstOrDefaultAsync(x => x.Token == dto.RefreshToken);
+
+        if (existing?.User == null || existing.IsRevoked || existing.ExpiresAt <= DateTime.UtcNow)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("INVALID_REFRESH_TOKEN", "Refresh token khong hop le."));
+        }
+
+        existing.IsRevoked = true;
+        var replacement = CreateRefreshToken(existing.UserId);
+        _context.RefreshTokens.Add(replacement);
+        await _context.SaveChangesAsync();
+
+        return Ok(ApiResponse<object>.Ok(new
+        {
+            accessToken = GenerateJwtToken(existing.User),
+            refreshToken = replacement.Token,
+            user = ToUserDto(existing.User, existing.User.Role?.RoleName ?? "Customer")
+        }));
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(LogoutDto dto)
+    {
+        var token = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == dto.RefreshToken);
+        if (token != null)
+        {
+            token.IsRevoked = true;
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(ApiResponse<object>.Ok(new { }, "Dang xuat thanh cong."));
     }
 
     private string GenerateJwtToken(User user)
     {
+        var roleName = user.Role?.RoleName ?? (user.RoleId == 1 ? "Admin" : user.RoleId == 2 ? "Staff" : "Customer");
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.RoleId == 1 ? "Admin" : "Customer")
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Role, roleName)
         };
 
-        var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+        var jwtKey = _configuration["Jwt:Secret"] ?? _configuration["Jwt:Key"]!;
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var minutes = int.TryParse(_configuration["Jwt:AccessTokenExpiry"], out var value) ? value : 15;
 
         var token = new JwtSecurityToken(
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(1),
-            signingCredentials: creds
-        );
+            expires: DateTime.UtcNow.AddMinutes(minutes),
+            signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    private RefreshToken CreateRefreshToken(Guid userId)
+    {
+        var days = int.TryParse(_configuration["Jwt:RefreshTokenExpiry"], out var value) ? value : 7;
+        return new RefreshToken
+        {
+            UserId = userId,
+            Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+            ExpiresAt = DateTime.UtcNow.AddDays(days)
+        };
+    }
+
+    private static object ToUserDto(User user, string roleName) => new
+    {
+        user.UserId,
+        user.Email,
+        user.FullName,
+        user.Phone,
+        user.AvatarUrl,
+        user.RoleId,
+        Role = roleName
+    };
 }

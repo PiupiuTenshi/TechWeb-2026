@@ -28,11 +28,16 @@ public class User
     public string? AvatarUrl { get; set; }
 
     [Required]
-    public int RoleId { get; set; } 
+    public int RoleId { get; set; }
+    public Role? Role { get; set; }
 
     public bool IsActive { get; set; } = true; 
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public List<RefreshToken> RefreshTokens { get; set; } = new();
+    public List<Address> Addresses { get; set; } = new();
+    public List<Cart> Carts { get; set; } = new();
 }
