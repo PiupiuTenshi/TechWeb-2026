@@ -161,7 +161,7 @@ public class OrdersController : ControllerBase
 
         foreach (var item in order.Items)
         {
-            var inventory = await _context.Inventory.FirstOrDefaultAsync(i => i.VariantId == item.VariantId);
+            var inventory = await _context.Inventories.FirstOrDefaultAsync(i => i.VariantId == item.VariantId);
             if (inventory != null)
             {
                 inventory.Quantity += item.Quantity;

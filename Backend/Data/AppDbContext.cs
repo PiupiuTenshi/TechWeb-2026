@@ -18,7 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<ProductVariant> ProductVariants { get; set; }
     public DbSet<Specification> Specifications { get; set; }
     public DbSet<PromotionProduct> PromotionProducts { get; set; }
-    public DbSet<Inventory> Inventory { get; set; }
+    public DbSet<Inventory> Inventories { get; set; }
     public DbSet<InventoryLog> InventoryLogs { get; set; }
     public DbSet<Cart> Carts { get; set; }
     public DbSet<CartItem> CartItems { get; set; }
@@ -40,6 +40,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Product>().HasIndex(x => x.Slug).IsUnique();
         modelBuilder.Entity<ProductVariant>().HasIndex(x => x.SKU).IsUnique();
         modelBuilder.Entity<Inventory>().HasIndex(x => x.VariantId).IsUnique();
+        modelBuilder.Entity<Inventory>().ToTable("Inventory");
         modelBuilder.Entity<Payment>().HasIndex(x => x.OrderId).IsUnique();
 
         modelBuilder.Entity<Category>()
@@ -52,6 +53,18 @@ public class AppDbContext : DbContext
             .HasOne(x => x.Role)
             .WithMany(x => x.Users)
             .HasForeignKey(x => x.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<InventoryLog>()
+            .HasOne(x => x.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<OrderStatusLog>()
+            .HasOne(x => x.ChangedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ChangedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
