@@ -6,6 +6,7 @@ using TechShop.Backend.Data;
 using TechShop.Backend.DTOs.Common;
 using TechShop.Backend.DTOs.Order;
 using TechShop.Backend.Models;
+using TechShop.Backend.Services;
 
 namespace TechShop.Backend.Controllers;
 
@@ -15,10 +16,12 @@ namespace TechShop.Backend.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IEmailService _emailService;
 
-    public OrdersController(AppDbContext context)
+    public OrdersController(AppDbContext context, IEmailService emailService)
     {
         _context = context;
+        _emailService = emailService;
     }
 
     [HttpPost]
@@ -101,6 +104,7 @@ public class OrdersController : ControllerBase
         cart.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+        await _emailService.SendOrderConfirmationAsync(order);
 
         return Ok(ApiResponse<object>.Ok(MapOrder(order), "Da tao don hang."));
     }
@@ -179,6 +183,7 @@ public class OrdersController : ControllerBase
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
+        await _emailService.SendOrderStatusChangedAsync(order, oldStatus, "Cancelled");
 
         return Ok(ApiResponse<object>.Ok(MapOrder(order), "Da huy don hang."));
     }
