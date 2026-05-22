@@ -80,6 +80,9 @@ public class Payment
     public string? TransactionCode { get; set; }
     public string? GatewayResponse { get; set; }
     public DateTime? PaidAt { get; set; }
+    public DateTime? RefundedAt { get; set; }
+    [MaxLength(255)]
+    public string? RefundNote { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 

@@ -75,6 +75,28 @@ public static class DbSeeder
                 });
                 context.SaveChanges();
             }
+
+            if (!context.Promotions.Any())
+            {
+                var products = context.Products.Take(3).Select(p => p.ProductId).ToList();
+                var promotion = new Promotion
+                {
+                    Name = "TechShop Phase 2 Launch",
+                    DiscountType = "Percent",
+                    DiscountValue = 8,
+                    StartsAt = DateTime.UtcNow.AddDays(-1),
+                    EndsAt = DateTime.UtcNow.AddDays(14),
+                    IsActive = true
+                };
+
+                foreach (var productId in products)
+                {
+                    promotion.Products.Add(new PromotionProduct { ProductId = productId });
+                }
+
+                context.Promotions.Add(promotion);
+                context.SaveChanges();
+            }
         }
         catch (Exception ex)
         {

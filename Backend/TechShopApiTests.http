@@ -1,0 +1,374 @@
+@baseUrl = http://localhost:5000
+@apiUrl = {{baseUrl}}/api
+
+# Seed accounts from DbSeeder:
+# Admin:    admin@techshop.vn / Admin@123
+# Customer: test@techshop.vn  / Test@123
+
+###
+# @name customerLogin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@techshop.vn",
+  "password": "Test@123"
+}
+
+###
+# @name adminLogin
+POST {{apiUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@techshop.vn",
+  "password": "Admin@123"
+}
+
+###
+# @name registerCustomer
+POST {{apiUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "phase-test@techshop.vn",
+  "password": "Test@123",
+  "fullName": "Phase Test Customer",
+  "phone": "0900000000"
+}
+
+###
+# @name refreshToken
+POST {{apiUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{customerLogin.response.body.$.data.refreshToken}}"
+}
+
+###
+# @name logout
+POST {{apiUrl}}/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{customerLogin.response.body.$.data.refreshToken}}"
+}
+
+###
+# @name categories
+GET {{apiUrl}}/categories
+Accept: application/json
+
+###
+# @name brands
+GET {{apiUrl}}/brands
+Accept: application/json
+
+###
+# @name products
+GET {{apiUrl}}/products?page=1&pageSize=10&sort=newest
+Accept: application/json
+
+###
+# @name productsByCategory
+GET {{apiUrl}}/products?category=laptop&page=1&pageSize=10&sort=price_asc
+Accept: application/json
+
+###
+# @name productsByBrand
+GET {{apiUrl}}/products?brand=Apple&page=1&pageSize=10&sort=price_desc
+Accept: application/json
+
+###
+# @name productDetail
+GET {{apiUrl}}/products/{{products.response.body.$.data[0].slug}}
+Accept: application/json
+
+###
+# @name createProduct
+POST {{apiUrl}}/products
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "name": "Phase API Test Laptop",
+  "slug": "phase-api-test-laptop",
+  "brand": "TechShop",
+  "description": "Product created from TechShopApiTests.http",
+  "basePrice": 19990000,
+  "salePrice": 17990000,
+  "thumbnailUrl": "/images/phase-api-test-laptop.webp",
+  "tags": "phase2,test",
+  "isFeatured": false,
+  "variants": [
+    {
+      "sku": "PHASE-API-TEST-LAPTOP-STD",
+      "color": "Black",
+      "ram": "16GB",
+      "storage": "512GB",
+      "priceOffset": 0,
+      "quantity": 10
+    }
+  ],
+  "images": [
+    {
+      "imageUrl": "/images/phase-api-test-laptop.webp",
+      "altText": "Phase API Test Laptop",
+      "sortOrder": 0
+    }
+  ],
+  "specifications": [
+    {
+      "specKey": "CPU",
+      "specValue": "Intel Core i5",
+      "sortOrder": 1
+    }
+  ]
+}
+
+###
+# @name updateProduct
+PUT {{apiUrl}}/products/{{createProduct.response.body.$.data.productId}}
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "name": "Phase API Test Laptop Updated",
+  "slug": "phase-api-test-laptop",
+  "brand": "TechShop",
+  "description": "Updated from TechShopApiTests.http",
+  "basePrice": 19990000,
+  "salePrice": 16990000,
+  "thumbnailUrl": "/images/phase-api-test-laptop.webp",
+  "tags": "phase2,test,updated",
+  "isFeatured": true,
+  "isActive": true
+}
+
+###
+# @name cartGetGuest
+GET {{apiUrl}}/cart
+Accept: application/json
+
+###
+# @name cartAddCustomer
+POST {{apiUrl}}/cart/items
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "variantId": "{{productDetail.response.body.$.data.variants[0].variantId}}",
+  "quantity": 1
+}
+
+###
+# @name cartGetCustomer
+GET {{apiUrl}}/cart
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name cartUpdateItem
+PUT {{apiUrl}}/cart/items/{{cartAddCustomer.response.body.$.data.items[0].cartItemId}}
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "quantity": 2
+}
+
+###
+# @name cartApplyCoupon
+POST {{apiUrl}}/cart/apply-coupon
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "code": "TECHSHOP10"
+}
+
+###
+# @name createOrder
+POST {{apiUrl}}/orders
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "receiverName": "TechShop Test",
+  "phone": "0900000000",
+  "shippingAddress": "123 Test Street, Quan 1, TP HCM",
+  "note": "Created from TechShopApiTests.http"
+}
+
+###
+# @name myOrders
+GET {{apiUrl}}/orders
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name orderDetail
+GET {{apiUrl}}/orders/{{createOrder.response.body.$.data.orderId}}
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name createVnPay
+POST {{apiUrl}}/payments/vnpay/create
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": "{{createOrder.response.body.$.data.orderId}}",
+  "returnUrl": "http://localhost:5173/payment-result"
+}
+
+###
+# Callback note:
+# The payment create response returns data.paymentUrl with paymentId, transactionCode, signature.
+# Copy those query params into the request below.
+# @name vnPayCallback
+POST {{apiUrl}}/payments/vnpay/callback
+Content-Type: application/json
+
+{
+  "paymentId": "{{createVnPay.response.body.$.data.paymentId}}",
+  "status": "Success",
+  "transactionCode": "{{createVnPay.response.body.$.data.transactionCode}}",
+  "gatewayResponse": "Manual REST Client success callback",
+  "signature": "PASTE_SIGNATURE_FROM_PAYMENT_URL"
+}
+
+###
+# @name createMomo
+POST {{apiUrl}}/payments/momo/create
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": "{{createOrder.response.body.$.data.orderId}}",
+  "returnUrl": "http://localhost:5173/payment-result"
+}
+
+###
+# Callback note:
+# Copy signature from createMomo.response.body.data.paymentUrl.
+# @name momoCallback
+POST {{apiUrl}}/payments/momo/callback
+Content-Type: application/json
+
+{
+  "paymentId": "{{createMomo.response.body.$.data.paymentId}}",
+  "status": "Success",
+  "transactionCode": "{{createMomo.response.body.$.data.transactionCode}}",
+  "gatewayResponse": "Manual REST Client success callback",
+  "signature": "PASTE_SIGNATURE_FROM_PAYMENT_URL"
+}
+
+###
+# @name adminOrders
+GET {{apiUrl}}/admin/orders?page=1&pageSize=20
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name adminUpdateOrderStatus
+PATCH {{apiUrl}}/admin/orders/{{createOrder.response.body.$.data.orderId}}/status
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "status": "Completed",
+  "note": "Completed from API test file"
+}
+
+###
+# @name adminUpdateTracking
+PUT {{apiUrl}}/admin/orders/{{createOrder.response.body.$.data.orderId}}/tracking
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "trackingCode": "TS-TEST-0001"
+}
+
+###
+# @name createReview
+POST {{apiUrl}}/reviews
+Authorization: Bearer {{customerLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "productId": "{{productDetail.response.body.$.data.productId}}",
+  "orderId": "{{createOrder.response.body.$.data.orderId}}",
+  "rating": 5,
+  "title": "Great product",
+  "body": "Review created from TechShopApiTests.http"
+}
+
+###
+# @name productReviews
+GET {{apiUrl}}/products/{{productDetail.response.body.$.data.productId}}/reviews
+Accept: application/json
+
+###
+# @name activePromotions
+GET {{apiUrl}}/promotions/active
+Accept: application/json
+
+###
+# @name adminPromotions
+GET {{apiUrl}}/promotions?page=1&pageSize=20
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name createPromotion
+POST {{apiUrl}}/promotions
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "API Test Promotion",
+  "discountType": "Percent",
+  "discountValue": 12,
+  "startsAt": "2026-05-21T00:00:00Z",
+  "endsAt": "2026-06-21T00:00:00Z",
+  "isActive": true,
+  "productIds": [
+    "{{productDetail.response.body.$.data.productId}}"
+  ]
+}
+
+###
+# @name updatePromotion
+PUT {{apiUrl}}/promotions/{{createPromotion.response.body.$.data.promotionId}}
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "API Test Promotion Updated",
+  "discountType": "Fixed",
+  "discountValue": 500000,
+  "startsAt": "2026-05-21T00:00:00Z",
+  "endsAt": "2026-06-21T00:00:00Z",
+  "isActive": true,
+  "productIds": [
+    "{{productDetail.response.body.$.data.productId}}"
+  ]
+}
+
+###
+# @name deletePromotion
+DELETE {{apiUrl}}/promotions/{{createPromotion.response.body.$.data.promotionId}}
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name deleteProduct
+DELETE {{apiUrl}}/products/{{createProduct.response.body.$.data.productId}}
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json

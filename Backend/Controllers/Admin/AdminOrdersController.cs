@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TechShop.Backend.Data;
 using TechShop.Backend.DTOs.Common;
 using TechShop.Backend.DTOs.Order;
+using TechShop.Backend.Services;
 
 namespace TechShop.Backend.Controllers.Admin;
 
@@ -14,10 +15,12 @@ namespace TechShop.Backend.Controllers.Admin;
 public class AdminOrdersController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IEmailService _emailService;
 
-    public AdminOrdersController(AppDbContext context)
+    public AdminOrdersController(AppDbContext context, IEmailService emailService)
     {
         _context = context;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -72,6 +75,7 @@ public class AdminOrdersController : ControllerBase
         });
 
         await _context.SaveChangesAsync();
+        await _emailService.SendOrderStatusChangedAsync(order, oldStatus, dto.Status);
         return Ok(ApiResponse<object>.Ok(new { order.OrderId, order.Status }, "Da cap nhat trang thai."));
     }
 
