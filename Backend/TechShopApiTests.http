@@ -99,7 +99,7 @@ Content-Type: application/json
   "description": "Product created from TechShopApiTests.http",
   "basePrice": 19990000,
   "salePrice": 17990000,
-  "thumbnailUrl": "/images/phase-api-test-laptop.webp",
+  "thumbnailUrl": "/images/phase-api-test-laptop.webb",
   "tags": "phase2,test",
   "isFeatured": false,
   "variants": [
@@ -372,3 +372,140 @@ Accept: application/json
 DELETE {{apiUrl}}/products/{{createProduct.response.body.$.data.productId}}
 Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
 Accept: application/json
+
+###
+# Phase 3 - Admin reports
+# @name adminRevenueReport
+GET {{apiUrl}}/admin/reports/revenue?groupBy=day
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name adminTopProducts
+GET {{apiUrl}}/admin/reports/top-products?take=10
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name adminLowStockReport
+GET {{apiUrl}}/admin/reports/low-stock?take=50
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# Downloads an xlsx file in REST Client.
+# @name adminRevenueExport
+GET {{apiUrl}}/admin/reports/revenue/export?groupBy=day
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+###
+# Phase 3 - Admin inventory
+# @name adminInventory
+GET {{apiUrl}}/admin/inventory?page=1&pageSize=20
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name adminInventoryLowStock
+GET {{apiUrl}}/admin/inventory?lowStock=true&page=1&pageSize=20
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name adminInventoryLogs
+GET {{apiUrl}}/admin/inventory/logs?page=1&pageSize=20
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name adminInventoryImport
+POST {{apiUrl}}/admin/inventory/import
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "variantId": "{{productDetail.response.body.$.data.variants[0].variantId}}",
+  "quantity": 5,
+  "note": "Import from TechShopApiTests.http"
+}
+
+###
+# @name adminInventoryExport
+POST {{apiUrl}}/admin/inventory/export
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "variantId": "{{productDetail.response.body.$.data.variants[0].variantId}}",
+  "quantity": 1,
+  "note": "Export from TechShopApiTests.http"
+}
+
+###
+# @name adminInventoryAdjust
+PATCH {{apiUrl}}/admin/inventory/adjust
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "variantId": "{{productDetail.response.body.$.data.variants[0].variantId}}",
+  "quantity": 25,
+  "note": "Adjust from TechShopApiTests.http"
+}
+
+###
+# Phase 3 - Admin users
+# @name adminUsers
+GET {{apiUrl}}/admin/users?page=1&pageSize=20
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Accept: application/json
+
+###
+# @name adminCreateUser
+POST {{apiUrl}}/admin/users
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "email": "phase3-user@techshop.vn",
+  "password": "User@123",
+  "fullName": "Phase 3 User",
+  "phone": "0911111111",
+  "roleId": 3,
+  "isActive": true
+}
+
+###
+# @name adminUpdateUser
+PUT {{apiUrl}}/admin/users/{{adminCreateUser.response.body.$.data.userId}}
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "fullName": "Phase 3 User Updated",
+  "phone": "0922222222",
+  "avatarUrl": null,
+  "roleId": 3,
+  "isActive": true
+}
+
+###
+# @name adminChangeUserPassword
+PATCH {{apiUrl}}/admin/users/{{adminCreateUser.response.body.$.data.userId}}/password
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "password": "User@456"
+}
+
+###
+# @name adminDisableUser
+PATCH {{apiUrl}}/admin/users/{{adminCreateUser.response.body.$.data.userId}}/status
+Authorization: Bearer {{adminLogin.response.body.$.data.accessToken}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
