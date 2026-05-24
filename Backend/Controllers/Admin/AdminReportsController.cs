@@ -34,22 +34,28 @@ public class AdminReportsController : ControllerBase
         var (start, end) = NormalizeRange(from, to);
         take = Math.Clamp(take, 1, 50);
 
-        var products = await _context.OrderItems
+        var rows = await _context.OrderItems
             .Include(i => i.Order)
             .Where(i => i.Order != null
                 && i.Order.CreatedAt >= start
                 && i.Order.CreatedAt <= end
                 && i.Order.Status != "Cancelled")
             .GroupBy(i => new { i.VariantId, i.ProductName, i.VariantInfo })
-            .Select(g => new TopProductDto(
+            .Select(g => new
+            {
                 g.Key.VariantId,
                 g.Key.ProductName,
                 g.Key.VariantInfo,
-                g.Sum(x => x.Quantity),
-                g.Sum(x => x.Subtotal)))
+                QuantitySold = g.Sum(x => x.Quantity),
+                Revenue = g.Sum(x => x.Subtotal)
+            })
             .OrderByDescending(x => x.Revenue)
             .Take(take)
             .ToListAsync();
+
+        var products = rows
+            .Select(x => new TopProductDto(x.VariantId, x.ProductName, x.VariantInfo, x.QuantitySold, x.Revenue))
+            .ToList();
 
         return Ok(ApiResponse<List<TopProductDto>>.Ok(products));
     }

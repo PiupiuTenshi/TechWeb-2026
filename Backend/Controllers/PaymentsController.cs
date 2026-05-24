@@ -111,8 +111,9 @@ public class PaymentsController : ControllerBase
             var oldStatus = payment.Order.Status;
             payment.Order.Status = "Paid";
             payment.Order.UpdatedAt = DateTime.UtcNow;
-            payment.Order.StatusLogs.Add(new OrderStatusLog
+            _context.OrderStatusLogs.Add(new OrderStatusLog
             {
+                OrderId = payment.Order.OrderId,
                 OldStatus = oldStatus,
                 NewStatus = "Paid",
                 Note = $"{method} payment success"

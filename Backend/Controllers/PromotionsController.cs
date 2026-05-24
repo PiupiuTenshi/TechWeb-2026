@@ -90,7 +90,12 @@ public class PromotionsController : ControllerBase
             IsActive = dto.IsActive
         };
 
-        await AttachProducts(promotion, dto.ProductIds);
+        var productIds = await GetActiveProductIds(dto.ProductIds);
+        foreach (var productId in productIds)
+        {
+            promotion.Products.Add(new PromotionProduct { ProductId = productId });
+        }
+
         _context.Promotions.Add(promotion);
         await _context.SaveChangesAsync();
 
@@ -121,7 +126,16 @@ public class PromotionsController : ControllerBase
         promotion.IsActive = dto.IsActive;
         _context.PromotionProducts.RemoveRange(promotion.Products);
         promotion.Products.Clear();
-        await AttachProducts(promotion, dto.ProductIds);
+        var productIds = await GetActiveProductIds(dto.ProductIds);
+        foreach (var productId in productIds)
+        {
+            _context.PromotionProducts.Add(new PromotionProduct
+            {
+                PromotionId = promotion.PromotionId,
+                ProductId = productId
+            });
+        }
+
         await _context.SaveChangesAsync();
 
         return Ok(ApiResponse<object>.Ok(new { promotion.PromotionId }, "Da cap nhat khuyen mai."));
@@ -148,18 +162,13 @@ public class PromotionsController : ControllerBase
             .Include(p => p.Products)
             .ThenInclude(pp => pp.Product);
 
-    private async Task AttachProducts(Promotion promotion, List<Guid> productIds)
+    private async Task<List<Guid>> GetActiveProductIds(List<Guid> productIds)
     {
         var uniqueProductIds = productIds.Distinct().ToList();
-        var existingProductIds = await _context.Products
+        return await _context.Products
             .Where(p => uniqueProductIds.Contains(p.ProductId) && p.IsActive)
             .Select(p => p.ProductId)
             .ToListAsync();
-
-        foreach (var productId in existingProductIds)
-        {
-            promotion.Products.Add(new PromotionProduct { ProductId = productId });
-        }
     }
 
     private static ApiResponse<object>? ValidatePromotion(string discountType, decimal discountValue, DateTime startsAt, DateTime endsAt)

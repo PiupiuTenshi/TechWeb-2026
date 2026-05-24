@@ -53,7 +53,12 @@ public class CartController : ControllerBase
         }
         else
         {
-            cart.Items.Add(new CartItem { VariantId = dto.VariantId, Quantity = dto.Quantity });
+            _context.CartItems.Add(new CartItem
+            {
+                CartId = cart.CartId,
+                VariantId = dto.VariantId,
+                Quantity = dto.Quantity
+            });
         }
 
         cart.UpdatedAt = DateTime.UtcNow;

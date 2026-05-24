@@ -66,8 +66,9 @@ public class AdminOrdersController : ControllerBase
         var oldStatus = order.Status;
         order.Status = dto.Status;
         order.UpdatedAt = DateTime.UtcNow;
-        order.StatusLogs.Add(new()
+        _context.OrderStatusLogs.Add(new()
         {
+            OrderId = order.OrderId,
             OldStatus = oldStatus,
             NewStatus = dto.Status,
             Note = dto.Note,

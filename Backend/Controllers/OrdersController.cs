@@ -161,7 +161,7 @@ public class OrdersController : ControllerBase
         var oldStatus = order.Status;
         order.Status = "Cancelled";
         order.UpdatedAt = DateTime.UtcNow;
-        order.StatusLogs.Add(new OrderStatusLog { OldStatus = oldStatus, NewStatus = "Cancelled", Note = "Customer cancelled", ChangedBy = userId });
+        _context.OrderStatusLogs.Add(new OrderStatusLog { OrderId = order.OrderId, OldStatus = oldStatus, NewStatus = "Cancelled", Note = "Customer cancelled", ChangedBy = userId });
 
         foreach (var item in order.Items)
         {
