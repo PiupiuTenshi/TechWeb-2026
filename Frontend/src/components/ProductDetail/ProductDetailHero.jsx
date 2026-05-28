@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom'
+import { useCart } from '../../context/CartContext'
 import './ProductDetailHero.css'
 
 function formatPrice(price) {
@@ -8,10 +10,21 @@ function formatPrice(price) {
  * ProductDetailHero
  *
  * Props:
- *   product {object} — phone or laptop product object
+ *   product {object} — phone, laptop, or accessory product object
  */
 function ProductDetailHero({ product }) {
   const { name, image, salePrice, originalPrice } = product
+  const { addToCart, buyNow } = useCart()
+  const navigate      = useNavigate()
+
+  const handleBuyNow = () => {
+    buyNow(product)
+    navigate('/gio-hang', { state: { fromBuyNow: true } })
+  }
+
+  const handleAddToCart = () => {
+    addToCart(product, false)
+  }
 
   return (
     <div className="detail-hero">
@@ -35,6 +48,7 @@ function ProductDetailHero({ product }) {
           <button
             className="detail-hero-btn-buy"
             id="btn-buy-now"
+            onClick={handleBuyNow}
             aria-label={`Mua ngay ${name}`}
           >
             Mua ngay
@@ -42,6 +56,7 @@ function ProductDetailHero({ product }) {
           <button
             className="detail-hero-btn-cart"
             id="btn-add-to-cart"
+            onClick={handleAddToCart}
             aria-label={`Thêm ${name} vào giỏ hàng`}
           >
             Thêm vào giỏ hàng
