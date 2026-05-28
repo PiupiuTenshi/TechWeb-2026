@@ -1,0 +1,109 @@
+/* ===========================
+   CartPage
+   =========================== */
+
+.cart-page {
+  padding-top: 8px;
+  padding-bottom: 48px;
+  min-height: 60vh;
+}
+
+/* Two-column layout: items (left) + summary (right) */
+.cart-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+/* Left column — item list */
+.cart-items-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Select-all / bulk-delete header bar */
+.cart-select-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  margin-bottom: 8px;
+}
+
+.cart-select-all {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.cart-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.cart-checkbox:hover {
+  border-color: var(--primary);
+}
+
+.cart-checkbox.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.cart-checkbox.checked::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+.cart-bulk-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  transition: color var(--transition), background var(--transition);
+}
+
+.cart-bulk-delete:hover {
+  color: var(--primary);
+  background: #fff0f2;
+}
+
+/* Item rows gap */
+.cart-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .cart-layout {
+    grid-template-columns: 1fr;
+  }
+}

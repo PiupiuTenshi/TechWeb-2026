@@ -9,6 +9,7 @@ import LaptopPage from './pages/LaptopPage'
 import AccessoryPage from './pages/AccessoryPage'
 import BrandSeriesPage from './pages/BrandSeriesPage'
 import ProductDetailPage from './pages/ProductDetailPage'
+import CartPage from './pages/CartPage'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/laptop/:brand" element={<BrandSeriesPage type="laptop" />} />
           <Route path="/phu-kien" element={<AccessoryPage />} />
           <Route path="/san-pham/:id" element={<ProductDetailPage />} />
+          <Route path="/gio-hang" element={<CartPage />} />
         </Routes>
       </main>
       <Footer />

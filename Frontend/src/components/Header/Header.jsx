@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Search, ShoppingCart, User, Menu, Smartphone, Laptop, Headphones } from 'lucide-react'
+import { useCart } from '../../context/CartContext'
 import './Header.css'
 
 function Header() {
   const [searchValue, setSearchValue] = useState('')
-  const [cartCount] = useState(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const menuRef = useRef(null)
+  const menuRef  = useRef(null)
+  const navigate = useNavigate()
+  const { totalItems } = useCart()
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -24,8 +26,8 @@ function Header() {
     <header className="header">
       <div className="header-inner">
         {/* Logo */}
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="header-logo"
           onClick={() => {
             if (window.location.pathname === '/') {
@@ -38,8 +40,8 @@ function Header() {
 
         {/* Danh mục */}
         <div className="header-menu-wrapper" ref={menuRef}>
-          <button 
-            className="header-menu-btn" 
+          <button
+            className="header-menu-btn"
             id="header-danhmuc-btn"
             onClick={() => setIsMenuOpen(prev => !prev)}
             aria-expanded={isMenuOpen}
@@ -47,7 +49,7 @@ function Header() {
             <Menu size={16} />
             <span>Danh mục</span>
           </button>
-          
+
           {isMenuOpen && (
             <div className="header-dropdown">
               <Link to="/dien-thoai" className="header-dropdown-item" onClick={() => setIsMenuOpen(false)}>
@@ -82,11 +84,16 @@ function Header() {
 
         {/* Actions */}
         <div className="header-actions">
-          <button className="header-action-btn" id="header-cart-btn">
+          <button
+            className="header-action-btn"
+            id="header-cart-btn"
+            onClick={() => navigate('/gio-hang')}
+            aria-label="Giỏ hàng"
+          >
             <ShoppingCart size={18} />
             <span>Giỏ hàng</span>
-            {cartCount > 0 && (
-              <span className="header-cart-badge">{cartCount}</span>
+            {totalItems > 0 && (
+              <span className="header-cart-badge">{totalItems > 99 ? '99+' : totalItems}</span>
             )}
           </button>
           <button className="header-action-btn" id="header-login-btn">
