@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { phones, laptops, accessories } from '../data/products'
+import { useProducts } from '../context/ProductContext'
 import ProductSection from '../components/ProductSection/ProductSection'
 
 const PHONE_TABS = ['iPhone', 'Samsung', 'Xiaomi', 'Vivo', 'Realme', 'Oppo']
@@ -8,6 +8,10 @@ const ACCESSORY_TABS = ['Bàn phím', 'Tai nghe', 'Chuột']
 
 function HomePage() {
   const navigate = useNavigate()
+  const { phones, laptops, accessories, loading, error } = useProducts()
+
+  if (loading) return <div className="container">Đang tải sản phẩm...</div>
+  if (error) return <div className="container">{error}</div>
 
   return (
     <div className="container">

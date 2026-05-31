@@ -14,11 +14,14 @@ function LoginForm({ onSwitchToRegister }) {
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [error,    setError   ] = useState('')
+  const [loading,  setLoading ] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    const result = login(email, password)
+    setLoading(true)
+    const result = await login(email, password)
+    setLoading(false)
     if (result.ok) {
       close()
     } else {
@@ -71,8 +74,8 @@ function LoginForm({ onSwitchToRegister }) {
       )}
 
       {/* Submit */}
-      <button type="submit" className="auth-btn-primary" id="login-submit-btn">
-        Đăng nhập
+      <button type="submit" className="auth-btn-primary" id="login-submit-btn" disabled={loading}>
+        {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
       </button>
 
       {/* OR divider */}

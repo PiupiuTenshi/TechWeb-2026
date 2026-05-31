@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
 /**
  * RegisterForm
@@ -8,15 +9,31 @@ import { Eye, EyeOff } from 'lucide-react'
  *   onSwitchToLogin {function} — called when "Đăng nhập!" is clicked
  */
 function RegisterForm({ onSwitchToLogin }) {
+  const { register, close } = useAuth()
   const [email,    setEmail   ] = useState('')
   const [lastName, setLastName] = useState('')
   const [firstName,setFirstName]= useState('')
   const [password, setPassword ] = useState('')
   const [showPass, setShowPass ] = useState(false)
+  const [error,    setError    ] = useState('')
+  const [loading,  setLoading  ] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Auth logic placeholder
+    setError('')
+    setLoading(true)
+    const result = await register({
+      email,
+      password,
+      fullName: `${lastName} ${firstName}`.trim(),
+      phone: null,
+    })
+    setLoading(false)
+    if (result.ok) {
+      close()
+    } else {
+      setError(result.error)
+    }
   }
 
   return (
@@ -28,7 +45,7 @@ function RegisterForm({ onSwitchToLogin }) {
         type="email"
         placeholder="Email"
         value={email}
-        onChange={e => setEmail(e.target.value)}
+        onChange={e => { setEmail(e.target.value); setError('') }}
         autoComplete="email"
         required
       />
@@ -40,7 +57,7 @@ function RegisterForm({ onSwitchToLogin }) {
         type="text"
         placeholder="Họ"
         value={lastName}
-        onChange={e => setLastName(e.target.value)}
+        onChange={e => { setLastName(e.target.value); setError('') }}
         autoComplete="family-name"
         required
       />
@@ -52,7 +69,7 @@ function RegisterForm({ onSwitchToLogin }) {
         type="text"
         placeholder="Tên"
         value={firstName}
-        onChange={e => setFirstName(e.target.value)}
+        onChange={e => { setFirstName(e.target.value); setError('') }}
         autoComplete="given-name"
         required
       />
@@ -65,7 +82,7 @@ function RegisterForm({ onSwitchToLogin }) {
           type={showPass ? 'text' : 'password'}
           placeholder="Mật khẩu"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={e => { setPassword(e.target.value); setError('') }}
           autoComplete="new-password"
           required
         />
@@ -80,9 +97,15 @@ function RegisterForm({ onSwitchToLogin }) {
         </button>
       </div>
 
+      {error && (
+        <p style={{ color: '#e31837', fontSize: '13px', margin: '-4px 0' }}>
+          {error}
+        </p>
+      )}
+
       {/* Submit */}
-      <button type="submit" className="auth-btn-primary" id="register-submit-btn">
-        Tạo tài khoản
+      <button type="submit" className="auth-btn-primary" id="register-submit-btn" disabled={loading}>
+        {loading ? 'Đang tạo...' : 'Tạo tài khoản'}
       </button>
 
       {/* OR divider */}

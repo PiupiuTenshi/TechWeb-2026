@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useCart } from '../../context/CartContext'
 import './ProductDetailHero.css'
 
@@ -15,15 +16,31 @@ function formatPrice(price) {
 function ProductDetailHero({ product }) {
   const { name, image, salePrice, originalPrice } = product
   const { addToCart, buyNow } = useCart()
+  const [loading, setLoading] = useState(false)
   const navigate      = useNavigate()
 
-  const handleBuyNow = () => {
-    buyNow(product)
-    navigate('/gio-hang', { state: { fromBuyNow: true } })
+  const handleBuyNow = async () => {
+    try {
+      setLoading(true)
+      await buyNow(product)
+      navigate('/gio-hang', { state: { fromBuyNow: true } })
+    } catch (err) {
+      alert(err.message || 'Không thể mua ngay sản phẩm này.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleAddToCart = () => {
-    addToCart(product, false)
+  const handleAddToCart = async () => {
+    try {
+      setLoading(true)
+      await addToCart(product, false)
+      alert('Đã thêm vào giỏ hàng.')
+    } catch (err) {
+      alert(err.message || 'Không thể thêm vào giỏ hàng.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -49,6 +66,7 @@ function ProductDetailHero({ product }) {
             className="detail-hero-btn-buy"
             id="btn-buy-now"
             onClick={handleBuyNow}
+            disabled={loading}
             aria-label={`Mua ngay ${name}`}
           >
             Mua ngay
@@ -57,6 +75,7 @@ function ProductDetailHero({ product }) {
             className="detail-hero-btn-cart"
             id="btn-add-to-cart"
             onClick={handleAddToCart}
+            disabled={loading}
             aria-label={`Thêm ${name} vào giỏ hàng`}
           >
             Thêm vào giỏ hàng

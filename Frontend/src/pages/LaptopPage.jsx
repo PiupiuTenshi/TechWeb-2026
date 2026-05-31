@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { laptops } from '../data/products'
+import { useProducts } from '../context/ProductContext'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
 import BrandCardList from '../components/BrandCard/BrandCardList'
 import CategoryCardList from '../components/CategoryCard/CategoryCardList'
@@ -102,6 +102,7 @@ function matchesFilters(product, activeFilters) {
 }
 
 function LaptopPage() {
+  const { laptops, loading, error } = useProducts()
   const [activeCategory, setActiveCategory] = useState('')
   const [sortOrder, setSortOrder]           = useState('')
   const [visibleCount, setVisibleCount]     = useState(ITEMS_PER_PAGE)
@@ -122,7 +123,7 @@ function LaptopPage() {
     }
 
     return result
-  }, [activeCategory, sortOrder, activeFilters])
+  }, [laptops, activeCategory, sortOrder, activeFilters])
 
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
@@ -149,6 +150,9 @@ function LaptopPage() {
     setActiveFilters(EMPTY_FILTERS)
     setVisibleCount(ITEMS_PER_PAGE)
   }
+
+  if (loading) return <div className="container laptop-page">Đang tải sản phẩm...</div>
+  if (error) return <div className="container laptop-page">{error}</div>
 
   return (
     <div className="container laptop-page">

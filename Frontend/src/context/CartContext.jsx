@@ -1,147 +1,180 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { cartApi } from '../api/client'
+import { mapCart } from '../api/mappers'
 
 const CartContext = createContext(null)
 
-const STORAGE_KEY = 'techshop_cart'
-
-function loadCart() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+function selectedMap(items) {
+  return Object.fromEntries(items.map(item => [item.id, item.selected]))
 }
 
-/**
- * Cart item shape:
- * {
- *   id:            number   — product id
- *   name:          string
- *   image:         string
- *   salePrice:     number
- *   originalPrice: number
- *   brand:         string
- *   quantity:      number
- *   selected:      boolean
- * }
- */
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(loadCart)
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  // Persist to localStorage on every change
+  const applyCart = useCallback((cart, nextSelected = null, fallbackSelected = false) => {
+    setItems(prev => {
+      const selection = nextSelected || selectedMap(prev)
+      return mapCart(cart, selection, fallbackSelected)
+    })
+  }, [])
+
+  const refresh = useCallback(async (fallbackSelected = false) => {
+    setLoading(true)
+    setError('')
+    try {
+      const cart = await cartApi.get()
+      applyCart(cart, null, fallbackSelected)
+    } catch (err) {
+      setError(err.message || 'Không tải được giỏ hàng.')
+      setItems([])
+    } finally {
+      setLoading(false)
+    }
+  }, [applyCart])
+
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
-  }, [items])
+    queueMicrotask(() => refresh(false))
+  }, [refresh])
 
-  /** Add a product to cart (or increment if already there) */
-  const addToCart = useCallback((product, selected = true) => {
-    setItems(prev => {
-      const existing = prev.find(i => i.id === product.id)
-      if (existing) {
-        return prev.map(i =>
-          i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
-        )
+  useEffect(() => {
+    async function handleAuthChanged(event) {
+      if (event.detail?.type === 'login') {
+        const snapshot = items
+        try {
+          await Promise.all(snapshot.map(item => cartApi.addItem(item.variantId, item.quantity)))
+        } catch {
+          // If a guest cart item cannot sync, the user cart should still load.
+        }
+        await refresh(false)
+        return
       }
-      return [
-        ...prev,
-        {
-          id:            product.id,
-          name:          product.name,
-          image:         product.image,
-          salePrice:     product.salePrice,
-          originalPrice: product.originalPrice,
-          brand:         product.brand,
-          quantity:      1,
-          selected,
-        },
-      ]
-    })
-  }, [])
 
-  /**
-   * Buy now — deselects every other item, adds this product (or increments
-   * its quantity if already present), and selects only this product.
-   * The caller should navigate to /gio-hang after invoking this.
-   */
-  const buyNow = useCallback((product) => {
-    setItems(prev => {
-      const existing = prev.find(i => i.id === product.id)
-      if (existing) {
-        // Already in cart — just re-select it (and deselect others)
-        return prev.map(i => ({
-          ...i,
-          quantity: i.id === product.id ? i.quantity + 1 : i.quantity,
-          selected: i.id === product.id,
-        }))
+      if (event.detail?.type === 'logout') {
+        setItems([])
+        await refresh(false)
       }
-      // New item — deselect all existing, add this one selected
-      return [
-        ...prev.map(i => ({ ...i, selected: false })),
-        {
-          id:            product.id,
-          name:          product.name,
-          image:         product.image,
-          salePrice:     product.salePrice,
-          originalPrice: product.originalPrice,
-          brand:         product.brand,
-          quantity:      1,
-          selected:      true,
-        },
-      ]
-    })
-  }, [])
+    }
 
-  /** Remove an item from cart */
-  const removeFromCart = useCallback((id) => {
-    setItems(prev => prev.filter(i => i.id !== id))
-  }, [])
+    window.addEventListener('techshop-auth-changed', handleAuthChanged)
+    return () => window.removeEventListener('techshop-auth-changed', handleAuthChanged)
+  }, [items, refresh])
 
-  /** Update quantity of an item */
-  const updateQuantity = useCallback((id, quantity) => {
+  const addToCart = useCallback(async (product, selected = true) => {
+    if (!product.variantId) {
+      throw new Error('Sản phẩm này chưa có biến thể để thêm vào giỏ.')
+    }
+    const cart = await cartApi.addItem(product.variantId, 1)
+    const nextItems = mapCart(cart, selectedMap(items), false)
+    const nextSelected = Object.fromEntries(nextItems.map(item => [
+      item.id,
+      item.variantId === product.variantId ? selected : item.selected,
+    ]))
+    applyCart(cart, nextSelected, false)
+  }, [applyCart, items])
+
+  const buyNow = useCallback(async (product) => {
+    if (!product.variantId) {
+      throw new Error('Sản phẩm này chưa có biến thể để mua ngay.')
+    }
+    const cart = await cartApi.addItem(product.variantId, 1)
+    const nextItems = mapCart(cart, {}, false)
+    const nextSelected = Object.fromEntries(nextItems.map(item => [
+      item.id,
+      item.variantId === product.variantId,
+    ]))
+    applyCart(cart, nextSelected, false)
+  }, [applyCart])
+
+  const removeFromCart = useCallback(async (id) => {
+    const cart = await cartApi.deleteItem(id)
+    applyCart(cart)
+  }, [applyCart])
+
+  const updateQuantity = useCallback(async (id, quantity) => {
     if (quantity < 1) return
-    setItems(prev => prev.map(i => i.id === id ? { ...i, quantity } : i))
-  }, [])
+    const cart = await cartApi.updateItem(id, quantity)
+    applyCart(cart)
+  }, [applyCart])
 
-  /** Toggle selected state of one item */
   const toggleSelected = useCallback((id) => {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, selected: !i.selected } : i))
+    setItems(prev => prev.map(item => item.id === id ? { ...item, selected: !item.selected } : item))
   }, [])
 
-  /** Select / deselect all */
   const setAllSelected = useCallback((selected) => {
-    setItems(prev => prev.map(i => ({ ...i, selected })))
+    setItems(prev => prev.map(item => ({ ...item, selected })))
   }, [])
 
-  /** Remove all selected items */
-  const removeSelected = useCallback(() => {
-    setItems(prev => prev.filter(i => !i.selected))
+  const removeSelected = useCallback(async () => {
+    const selected = items.filter(item => item.selected)
+    await Promise.all(selected.map(item => cartApi.deleteItem(item.id)))
+    await refresh(false)
+  }, [items, refresh])
+
+  const keepOnlySelectedForCheckout = useCallback(async () => {
+    const unselected = items.filter(item => !item.selected)
+    if (unselected.length === 0) return
+    await Promise.all(unselected.map(item => cartApi.deleteItem(item.id)))
+    await refresh(true)
+  }, [items, refresh])
+
+  const clearCartState = useCallback(() => {
+    setItems([])
   }, [])
 
-  const totalItems    = items.reduce((s, i) => s + i.quantity, 0)
-  const selectedItems = items.filter(i => i.selected)
-  const allSelected   = items.length > 0 && items.every(i => i.selected)
-  const subtotal      = selectedItems.reduce((s, i) => s + i.salePrice * i.quantity, 0)
-  const originalTotal = selectedItems.reduce((s, i) => s + i.originalPrice * i.quantity, 0)
-  const discount      = originalTotal - subtotal
+  const selectedItems = items.filter(item => item.selected)
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
+  const allSelected = items.length > 0 && items.every(item => item.selected)
+  const subtotal = selectedItems.reduce((sum, item) => sum + item.salePrice * item.quantity, 0)
+  const originalTotal = selectedItems.reduce((sum, item) => sum + item.originalPrice * item.quantity, 0)
+  const discount = Math.max(0, originalTotal - subtotal)
+
+  const value = useMemo(() => ({
+    items,
+    loading,
+    error,
+    totalItems,
+    selectedItems,
+    allSelected,
+    subtotal,
+    originalTotal,
+    discount,
+    refresh,
+    addToCart,
+    buyNow,
+    removeFromCart,
+    updateQuantity,
+    toggleSelected,
+    setAllSelected,
+    removeSelected,
+    keepOnlySelectedForCheckout,
+    clearCartState,
+  }), [
+    items,
+    loading,
+    error,
+    totalItems,
+    selectedItems,
+    allSelected,
+    subtotal,
+    originalTotal,
+    discount,
+    refresh,
+    addToCart,
+    buyNow,
+    removeFromCart,
+    updateQuantity,
+    toggleSelected,
+    setAllSelected,
+    removeSelected,
+    keepOnlySelectedForCheckout,
+    clearCartState,
+  ])
 
   return (
-    <CartContext.Provider value={{
-      items,
-      totalItems,
-      selectedItems,
-      allSelected,
-      subtotal,
-      originalTotal,
-      discount,
-      addToCart,
-      buyNow,
-      removeFromCart,
-      updateQuantity,
-      toggleSelected,
-      setAllSelected,
-      removeSelected,
-    }}>
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   )

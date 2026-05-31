@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { accessories } from '../data/products'
+import { useProducts } from '../context/ProductContext'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
 import FilterBar from '../components/FilterBar/FilterBar'
 import SortBar from '../components/SortBar/SortBar'
@@ -37,6 +37,7 @@ function matchesFilters(product, activeFilters) {
 
 function AccessoryPage() {
   const location = useLocation()
+  const { accessories, loading, error } = useProducts()
   const [sortOrder, setSortOrder] = useState('')
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
   const [activeFilters, setActiveFilters] = useState(() => {
@@ -46,9 +47,11 @@ function AccessoryPage() {
   })
 
   useEffect(() => {
-    setActiveFilters(location.state?.selectedBrand 
-      ? { type: [location.state.selectedBrand] }
-      : EMPTY_FILTERS)
+    queueMicrotask(() => {
+      setActiveFilters(location.state?.selectedBrand
+        ? { type: [location.state.selectedBrand] }
+        : EMPTY_FILTERS)
+    })
   }, [location.state?.selectedBrand])
 
   const filtered = useMemo(() => {
@@ -61,7 +64,7 @@ function AccessoryPage() {
     }
 
     return result
-  }, [sortOrder, activeFilters])
+  }, [accessories, sortOrder, activeFilters])
 
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
@@ -83,6 +86,9 @@ function AccessoryPage() {
     setActiveFilters(EMPTY_FILTERS)
     setVisibleCount(ITEMS_PER_PAGE)
   }
+
+  if (loading) return <div className="container accessory-page">Đang tải sản phẩm...</div>
+  if (error) return <div className="container accessory-page">{error}</div>
 
   return (
     <div className="container accessory-page">

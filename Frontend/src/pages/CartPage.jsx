@@ -21,7 +21,7 @@ const breadcrumbItems = [
  *  - Two-column layout: CartItems (left) + CartSummary (right)
  */
 function CartPage() {
-  const { items, allSelected, setAllSelected, removeSelected, selectedItems } = useCart()
+  const { items, loading, error, allSelected, setAllSelected, removeSelected, selectedItems } = useCart()
   const location = useLocation()
 
   // Clear all selections on every visit to the cart page,
@@ -32,6 +32,24 @@ function CartPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  if (loading) {
+    return (
+      <div className="container cart-page">
+        <Breadcrumb items={breadcrumbItems} />
+        <p>Đang tải giỏ hàng...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container cart-page">
+        <Breadcrumb items={breadcrumbItems} />
+        <p>{error}</p>
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (

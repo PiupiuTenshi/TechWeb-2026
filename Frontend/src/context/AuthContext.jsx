@@ -1,68 +1,113 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { authApi, clearAuthState, getAuthState, setAuthState } from '../api/client'
 
 const AuthContext = createContext(null)
 
-// ─── Sample accounts ──────────────────────────────────────────────────────────
-const SAMPLE_ACCOUNTS = [
-  {
-    email:     'nguyen.van.quyen.p3t@gmail.com',
-    password:  '123',
-    lastName:  'Nguyễn',
-    firstName: 'Quyến',
-    fullName:  'Nguyễn Quyến',
-    phone:     '',
-    gender:    'nam',
-    dob:       { day: '', month: '', year: '' },
-  },
-]
+function normalizeUser(user) {
+  if (!user) return null
+  return {
+    ...user,
+    fullName: user.fullName || user.email,
+  }
+}
 
-// ─── AuthProvider ─────────────────────────────────────────────────────────────
-/**
- * Provides:
- *   isOpen      {boolean}
- *   mode        {'login' | 'register'}
- *   user        {object | null}
- *   openLogin()
- *   openRegister()
- *   close()
- *   login(email, password) → { ok, error }
- *   logout()
- *   updateUser(fields)
- */
 export function AuthProvider({ children }) {
+  const storedAuth = getAuthState()
   const [isOpen, setIsOpen] = useState(false)
-  const [mode,   setMode  ] = useState('login')
-  const [user,   setUser  ] = useState(null)
+  const [mode, setMode] = useState('login')
+  const [user, setUser] = useState(() => normalizeUser(storedAuth?.user))
+  const [tokens, setTokens] = useState(() => storedAuth ? {
+    accessToken: storedAuth.accessToken,
+    refreshToken: storedAuth.refreshToken,
+  } : null)
 
-  const openLogin    = useCallback(() => { setMode('login');    setIsOpen(true)  }, [])
-  const openRegister = useCallback(() => { setMode('register'); setIsOpen(true)  }, [])
-  const close        = useCallback(() => setIsOpen(false), [])
+  const openLogin = useCallback(() => {
+    setMode('login')
+    setIsOpen(true)
+  }, [])
 
-  const login = useCallback((email, password) => {
-    const found = SAMPLE_ACCOUNTS.find(
-      a => a.email === email.trim() && a.password === password
-    )
-    if (found) {
-      setUser({ ...found })
-      return { ok: true }
+  const openRegister = useCallback(() => {
+    setMode('register')
+    setIsOpen(true)
+  }, [])
+
+  const close = useCallback(() => setIsOpen(false), [])
+
+  const saveSession = useCallback((session) => {
+    const normalizedUser = normalizeUser(session.user)
+    const nextTokens = {
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
     }
-    return { ok: false, error: 'Email hoặc mật khẩu không đúng.' }
+    setUser(normalizedUser)
+    setTokens(nextTokens)
+    setAuthState({ ...nextTokens, user: normalizedUser })
+    window.dispatchEvent(new CustomEvent('techshop-auth-changed', { detail: { type: 'login' } }))
   }, [])
 
-  const logout = useCallback(() => {
+  const login = useCallback(async (email, password) => {
+    try {
+      const session = await authApi.login(email, password)
+      saveSession(session)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err.message || 'Email hoặc mật khẩu không đúng.' }
+    }
+  }, [saveSession])
+
+  const register = useCallback(async ({ email, password, fullName, phone }) => {
+    try {
+      await authApi.register({ email, password, fullName, phone })
+      const session = await authApi.login(email, password)
+      saveSession(session)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err.message || 'Không thể tạo tài khoản.' }
+    }
+  }, [saveSession])
+
+  const logout = useCallback(async () => {
+    const refreshToken = tokens?.refreshToken
     setUser(null)
-  }, [])
+    setTokens(null)
+    clearAuthState()
+    window.dispatchEvent(new CustomEvent('techshop-auth-changed', { detail: { type: 'logout' } }))
+    try {
+      await authApi.logout(refreshToken)
+    } catch {
+      // Logout should clear the local session even if the server token was already invalid.
+    }
+  }, [tokens])
 
   const updateUser = useCallback((fields) => {
-    setUser(prev => prev ? { ...prev, ...fields } : prev)
+    setUser(prev => {
+      if (!prev) return prev
+      const nextUser = { ...prev, ...fields }
+      const auth = getAuthState()
+      if (auth) {
+        setAuthState({ ...auth, user: nextUser })
+      }
+      return nextUser
+    })
   }, [])
 
+  const value = useMemo(() => ({
+    isOpen,
+    mode,
+    user,
+    tokens,
+    openLogin,
+    openRegister,
+    close,
+    login,
+    register,
+    logout,
+    updateUser,
+  }), [isOpen, mode, user, tokens, openLogin, openRegister, close, login, register, logout, updateUser])
+
   return (
-    <AuthContext.Provider value={{
-      isOpen, mode, user,
-      openLogin, openRegister, close,
-      login, logout, updateUser,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

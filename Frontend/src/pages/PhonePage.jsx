@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { phones } from '../data/products'
+import { useProducts } from '../context/ProductContext'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
 import BrandCardList from '../components/BrandCard/BrandCardList'
 import FilterBar from '../components/FilterBar/FilterBar'
@@ -99,6 +99,7 @@ function matchesFilters(product, activeFilters) {
 }
 
 function PhonePage() {
+  const { phones, loading, error } = useProducts()
   const [sortOrder, setSortOrder]         = useState('')
   const [visibleCount, setVisibleCount]   = useState(ITEMS_PER_PAGE)
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS)
@@ -115,7 +116,7 @@ function PhonePage() {
     }
 
     return result
-  }, [sortOrder, activeFilters])
+  }, [phones, sortOrder, activeFilters])
 
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
@@ -137,6 +138,9 @@ function PhonePage() {
     setActiveFilters(EMPTY_FILTERS)
     setVisibleCount(ITEMS_PER_PAGE)
   }
+
+  if (loading) return <div className="container phone-page">Đang tải sản phẩm...</div>
+  if (error) return <div className="container phone-page">{error}</div>
 
   return (
     <div className="container phone-page">

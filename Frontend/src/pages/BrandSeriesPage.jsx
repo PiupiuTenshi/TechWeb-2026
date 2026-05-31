@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import {
-  phones, laptops,
   PHONE_BRAND_SERIES, LAPTOP_BRAND_SERIES,
 } from '../data/products'
+import { useProducts } from '../context/ProductContext'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
 import { SeriesCardList } from '../components/SeriesCard/SeriesCard'
 import FilterBar from '../components/FilterBar/FilterBar'
@@ -152,6 +152,7 @@ function matchesFilters(product, activeFilters, priceRanges) {
  */
 function BrandSeriesPage({ type }) {
   const { brand: brandSlug } = useParams()
+  const { phones, laptops, loading, error } = useProducts()
 
   // Resolve slug → brand name
   const slugMap     = type === 'phone' ? PHONE_SLUG_TO_BRAND : LAPTOP_SLUG_TO_BRAND
@@ -219,6 +220,9 @@ function BrandSeriesPage({ type }) {
     setActiveFilters(EMPTY_FILTERS)
     setVisibleCount(ITEMS_PER_PAGE)
   }
+
+  if (loading) return <div className="container brand-series-page">Đang tải sản phẩm...</div>
+  if (error) return <div className="container brand-series-page">{error}</div>
 
   // 404 guard — unknown brand slug
   if (!brandName) {

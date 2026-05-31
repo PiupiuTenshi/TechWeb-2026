@@ -15,8 +15,9 @@ function formatPrice(price) {
  *   originalTotal {number}
  *   discount      {number}
  *   onPlaceOrder  {function}
+ *   placing       {boolean}
  */
-function CheckoutSummary({ subtotal, originalTotal, discount, onPlaceOrder }) {
+function CheckoutSummary({ subtotal, originalTotal, discount, onPlaceOrder, placing = false }) {
   const [expanded, setExpanded] = useState(true)
 
   return (
@@ -75,10 +76,11 @@ function CheckoutSummary({ subtotal, originalTotal, discount, onPlaceOrder }) {
       <button
         className="checkout-summary-btn"
         onClick={onPlaceOrder}
+        disabled={placing}
         id="checkout-place-order-btn"
         aria-label="Đặt hàng"
       >
-        Đặt hàng
+        {placing ? 'Đang đặt hàng...' : 'Đặt hàng'}
       </button>
     </aside>
   )
