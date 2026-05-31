@@ -1,0 +1,14 @@
+**/.git
+**/.github
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/build
+**/.env
+**/*.user
+**/*.suo
+**/*.binlog
+Frontend

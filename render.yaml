@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: techshop-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Jwt__Secret
+        sync: false
+      - key: Jwt__Issuer
+        value: TechShop
+      - key: Jwt__Audience
+        value: TechShopClient
+      - key: Jwt__AccessTokenExpiry
+        value: 15
+      - key: Jwt__RefreshTokenExpiry
+        value: 7
+      - key: Payment__CallbackSecret
+        sync: false
+      - key: Cors__AllowedOrigins
+        sync: false

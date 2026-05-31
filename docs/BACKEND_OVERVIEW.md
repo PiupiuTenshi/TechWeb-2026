@@ -2,6 +2,13 @@
 
 Tài liệu này giải thích backend hiện tại của TechShop theo code trong thư mục `Backend/`. Mục tiêu là giúp Dev A, Dev B và Dev C hiểu backend đang có gì, chạy thế nào, luồng dữ liệu đi ra sao và frontend cần gọi API nào.
 
+## Nên đọc tài liệu nào?
+
+- `docs/BACKEND_STRUCTURE.md`: giải thích cấu trúc thư mục, vai trò từng file/class/controller/service/model.
+- `docs/BACKEND_API_REFERENCE.md`: tra cứu endpoint, request body, response, quyền, lỗi và thứ tự test API.
+- `docs/BACKEND_DATABASE_AND_FLOWS.md`: giải thích database model, quan hệ, seed data và các luồng auth/cart/order/payment/admin.
+- `docs/BACKEND_DATA_FLOW.md`: sơ đồ Mermaid tóm tắt các luồng chính.
+
 ## 1. Công nghệ sử dụng
 
 - Framework: ASP.NET Core Web API trên .NET 10.
@@ -828,4 +835,3 @@ dotnet ef database update --project Backend\api.csproj --startup-project Backend
   - `.env`
   - log test local
   - file secret thật
-
