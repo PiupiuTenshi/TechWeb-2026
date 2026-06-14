@@ -1,7 +1,12 @@
 // Admin API — maps to all backend admin controller endpoints
 import { getAuthState } from './client'
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://techshop-backend-8sfu.onrender.com').replace(/\/$/, '')
+let API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://techshop-backend-8sfu.onrender.com').replace(/\/$/, '')
+const FALLBACK_URLS = [
+  'https://techshop-backend-8sfu.onrender.com',
+  'http://localhost:5000',
+  'https://localhost:7188'
+]
 
 export class AdminApiError extends Error {
   constructor(message, status, payload) {
@@ -30,11 +35,29 @@ async function adminRequest(path, options = {}) {
       ? JSON.stringify(options.body)
       : undefined
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const fetchOptions = {
     ...options,
     headers,
     body,
-  })
+  }
+
+  let response
+  let lastError
+
+  if (import.meta.env.VITE_API_URL) {
+    response = await fetch(`${API_BASE_URL}${path}`, fetchOptions)
+  } else {
+    for (const url of FALLBACK_URLS) {
+      try {
+        response = await fetch(`${url}${path}`, fetchOptions)
+        API_BASE_URL = url
+        break
+      } catch (err) {
+        lastError = err
+      }
+    }
+    if (!response) throw lastError
+  }
 
   const text = await response.text()
   const payload = text ? JSON.parse(text) : null

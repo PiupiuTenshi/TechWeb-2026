@@ -1,4 +1,9 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://techshop-backend-8sfu.onrender.com').replace(/\/$/, '')
+let API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://techshop-backend-8sfu.onrender.com').replace(/\/$/, '')
+const FALLBACK_URLS = [
+  'https://techshop-backend-8sfu.onrender.com',
+  'http://localhost:5000',
+  'https://localhost:7188'
+]
 
 const AUTH_STORAGE_KEY = 'techshop_auth'
 const SESSION_STORAGE_KEY = 'techshop_session_id'
@@ -56,11 +61,29 @@ async function apiRequest(path, options = {}) {
     headers.set('X-Session-Id', sessionId)
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const fetchOptions = {
     ...options,
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  })
+  }
+
+  let response
+  let lastError
+
+  if (import.meta.env.VITE_API_URL) {
+    response = await fetch(`${API_BASE_URL}${path}`, fetchOptions)
+  } else {
+    for (const url of FALLBACK_URLS) {
+      try {
+        response = await fetch(`${url}${path}`, fetchOptions)
+        API_BASE_URL = url // Lưu lại URL thành công cho các request sau
+        break
+      } catch (err) {
+        lastError = err
+      }
+    }
+    if (!response) throw lastError
+  }
 
   const responseSessionId = response.headers.get('X-Session-Id')
   setSessionId(responseSessionId)
