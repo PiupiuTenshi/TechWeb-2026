@@ -1,11 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
-import {
-  PHONE_BRAND_SERIES, LAPTOP_BRAND_SERIES,
-} from '../data/products'
 import { useProducts } from '../context/ProductContext'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
-import { SeriesCardList } from '../components/SeriesCard/SeriesCard'
 import FilterBar from '../components/FilterBar/FilterBar'
 import SortBar from '../components/SortBar/SortBar'
 import ProductGrid from '../components/ProductGrid/ProductGrid'
@@ -158,10 +154,6 @@ function BrandSeriesPage({ type }) {
   const slugMap     = type === 'phone' ? PHONE_SLUG_TO_BRAND : LAPTOP_SLUG_TO_BRAND
   const brandName   = slugMap[brandSlug?.toLowerCase()]
 
-  // Series list for this brand
-  const brandSeriesMap = type === 'phone' ? PHONE_BRAND_SERIES : LAPTOP_BRAND_SERIES
-  const seriesList     = brandName ? (brandSeriesMap[brandName] || []) : []
-
   // All products for this brand
   const allProducts = type === 'phone' ? phones : laptops
   const brandProducts = useMemo(
@@ -169,7 +161,6 @@ function BrandSeriesPage({ type }) {
     [allProducts, brandName]
   )
 
-  const [activeSeries, setActiveSeries]   = useState('')
   const [sortOrder, setSortOrder]         = useState('')
   const [visibleCount, setVisibleCount]   = useState(ITEMS_PER_PAGE)
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS)
@@ -180,10 +171,6 @@ function BrandSeriesPage({ type }) {
   const filtered = useMemo(() => {
     let result = [...brandProducts]
 
-    if (activeSeries) {
-      result = result.filter(p => p.series === activeSeries)
-    }
-
     result = result.filter(p => matchesFilters(p, activeFilters, priceRanges))
 
     if (sortOrder === 'asc') {
@@ -193,17 +180,12 @@ function BrandSeriesPage({ type }) {
     }
 
     return result
-  }, [brandProducts, activeSeries, activeFilters, sortOrder, priceRanges])
+  }, [brandProducts, activeFilters, sortOrder, priceRanges])
 
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
 
   const handleLoadMore = () => setVisibleCount(prev => prev + ITEMS_PER_PAGE)
-
-  const handleSeriesChange = (series) => {
-    setActiveSeries(series)
-    setVisibleCount(ITEMS_PER_PAGE)
-  }
 
   const handleFilterChange = (groupKey, value) => {
     setActiveFilters(prev => {
@@ -245,14 +227,6 @@ function BrandSeriesPage({ type }) {
       <Breadcrumb items={breadcrumbItems} />
 
       <h1 className="brand-series-page-title">{pageTitle}</h1>
-
-      {seriesList.length > 0 && (
-        <SeriesCardList
-          seriesList={seriesList}
-          activeSeries={activeSeries}
-          onSeriesChange={handleSeriesChange}
-        />
-      )}
 
       <FilterBar
         filterGroups={filterGroups}
