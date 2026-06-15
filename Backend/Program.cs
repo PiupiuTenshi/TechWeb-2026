@@ -24,7 +24,11 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions
+            .CommandTimeout(60)
+            .EnableRetryOnFailure(3, TimeSpan.FromSeconds(2), null)));
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IPaymentGatewayService, PaymentGatewayService>();
@@ -75,8 +79,11 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    DbSeeder.Seed(context);
+    if (builder.Configuration.GetValue("Database:SeedOnStartup", true))
+    {
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        DbSeeder.Seed(context);
+    }
 }
 
 if (app.Environment.IsDevelopment())

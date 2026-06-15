@@ -16,4 +16,8 @@ public record PaymentGatewayResultDto(
     decimal Amount,
     string PaymentUrl,
     string TransactionCode,
-    DateTime ExpiresAt);
+    DateTime ExpiresAt,
+    string? Provider,
+    string? QrCodeUrl,
+    string? QrCodeData,
+    string? Instructions);

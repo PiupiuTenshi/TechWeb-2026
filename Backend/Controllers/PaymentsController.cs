@@ -34,6 +34,16 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> CreateMomoPayment(CreatePaymentRequestDto dto)
         => await CreateGatewayPayment(dto, "Momo");
 
+    [Authorize]
+    [HttpPost("zalopay/create")]
+    public async Task<IActionResult> CreateZaloPayPayment(CreatePaymentRequestDto dto)
+        => await CreateGatewayPayment(dto, "ZaloPay", useQr: true);
+
+    [Authorize]
+    [HttpPost("bank-transfer/create")]
+    public async Task<IActionResult> CreateBankTransferPayment(CreatePaymentRequestDto dto)
+        => await CreateGatewayPayment(dto, "BankTransfer", useQr: true);
+
     [HttpPost("vnpay/callback")]
     public async Task<IActionResult> VnPayCallback(PaymentCallbackDto dto)
         => await HandleCallback(dto, "VNPay");
@@ -42,7 +52,15 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> MomoCallback(PaymentCallbackDto dto)
         => await HandleCallback(dto, "Momo");
 
-    private async Task<IActionResult> CreateGatewayPayment(CreatePaymentRequestDto dto, string method)
+    [HttpPost("zalopay/callback")]
+    public async Task<IActionResult> ZaloPayCallback(PaymentCallbackDto dto)
+        => await HandleCallback(dto, "ZaloPay");
+
+    [HttpPost("bank-transfer/callback")]
+    public async Task<IActionResult> BankTransferCallback(PaymentCallbackDto dto)
+        => await HandleCallback(dto, "BankTransfer");
+
+    private async Task<IActionResult> CreateGatewayPayment(CreatePaymentRequestDto dto, string method, bool useQr = false)
     {
         var order = await _context.Orders.Include(o => o.Payment).FirstOrDefaultAsync(o => o.OrderId == dto.OrderId);
         if (order == null)
@@ -74,7 +92,9 @@ public class PaymentsController : ControllerBase
         payment.PaidAt = null;
         await _context.SaveChangesAsync();
 
-        var result = _paymentGateway.CreatePaymentUrl(payment, method, dto.ReturnUrl);
+        var result = useQr
+            ? _paymentGateway.CreateQrPayment(payment, method, dto.ReturnUrl)
+            : _paymentGateway.CreatePaymentUrl(payment, method, dto.ReturnUrl);
         return Ok(ApiResponse<PaymentGatewayResultDto>.Ok(result, $"Da tao giao dich {method}."));
     }
 

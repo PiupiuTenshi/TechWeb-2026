@@ -8,7 +8,7 @@ const PAYMENT_METHODS = [
     icon:  { bg: '#e31837', text: 'COD' },
   },
   {
-    id:    'qr',
+    id:    'bank-transfer',
     label: 'Chuyển khoản ngân hàng (QR Code)',
     icon:  { bg: '#1a56db', text: 'QR' },
   },
@@ -23,7 +23,7 @@ const PAYMENT_METHODS = [
     icon:  { bg: '#374151', text: 'VISA' },
   },
   {
-    id:    'zalo',
+    id:    'zalopay',
     label: 'Ví ZaloPay',
     icon:  { bg: '#0068ff', text: 'Zalo' },
   },

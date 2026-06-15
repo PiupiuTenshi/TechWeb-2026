@@ -219,6 +219,22 @@ export const paymentsApi = {
     })
     return response.data
   },
+
+  async createZaloPay(orderId, returnUrl) {
+    const response = await apiRequest('/api/Payments/zalopay/create', {
+      method: 'POST',
+      body: { orderId, returnUrl },
+    })
+    return response.data
+  },
+
+  async createBankTransfer(orderId, returnUrl) {
+    const response = await apiRequest('/api/Payments/bank-transfer/create', {
+      method: 'POST',
+      body: { orderId, returnUrl },
+    })
+    return response.data
+  },
 }
 
 export { API_BASE_URL }

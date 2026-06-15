@@ -1,7 +1,33 @@
-@api_HostAddress = http://localhost:5000
+@api_HostAddress = https://techshop-backend-8sfu.onrender.com
 
 
 GET {{api_HostAddress}}/weatherforecast/
 Accept: application/json
+
+###
+
+@accessToken = paste-admin-or-customer-token-here
+@orderId = paste-order-id-here
+@returnUrl = http://localhost:5173/tai-khoan
+
+POST {{api_HostAddress}}/api/Payments/zalopay/create
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": "{{orderId}}",
+  "returnUrl": "{{returnUrl}}"
+}
+
+###
+
+POST {{api_HostAddress}}/api/Payments/bank-transfer/create
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": "{{orderId}}",
+  "returnUrl": "{{returnUrl}}"
+}
 
 ###

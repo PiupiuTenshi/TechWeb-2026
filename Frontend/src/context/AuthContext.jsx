@@ -6,9 +6,11 @@ const AuthContext = createContext(null)
 
 function normalizeUser(user) {
   if (!user) return null
+  const roleName = user.roleName || user.role || user.Role
   return {
     ...user,
     fullName: user.fullName || user.email,
+    roleName,
   }
 }
 

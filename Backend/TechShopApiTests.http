@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:5000
+@baseUrl = https://techshop-backend-8sfu.onrender.com
 @apiUrl = {{baseUrl}}/api
 
 # Seed accounts from DbSeeder:

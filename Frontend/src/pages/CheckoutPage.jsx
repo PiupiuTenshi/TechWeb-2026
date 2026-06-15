@@ -34,6 +34,7 @@ function CheckoutPage() {
   const [address,  setAddress ] = useState('')
   const [payment,  setPayment ] = useState('cod')
   const [placing,  setPlacing ] = useState(false)
+  const [gatewayPayment, setGatewayPayment] = useState(null)
 
   const handleCustomerChange = (field, value) =>
     setCustomer(prev => ({ ...prev, [field]: value }))
@@ -57,6 +58,7 @@ function CheckoutPage() {
 
     try {
       setPlacing(true)
+      setGatewayPayment(null)
       await keepOnlySelectedForCheckout()
       const order = await ordersApi.create({
         receiverName: customer.name.trim(),
@@ -68,6 +70,18 @@ function CheckoutPage() {
       if (payment === 'momo') {
         const gateway = await paymentsApi.createMomo(order.orderId, `${window.location.origin}/tai-khoan`)
         window.location.href = gateway.paymentUrl
+        return
+      }
+
+      if (payment === 'zalopay') {
+        const gateway = await paymentsApi.createZaloPay(order.orderId, `${window.location.origin}/tai-khoan`)
+        setGatewayPayment(gateway)
+        return
+      }
+
+      if (payment === 'bank-transfer') {
+        const gateway = await paymentsApi.createBankTransfer(order.orderId, `${window.location.origin}/tai-khoan`)
+        setGatewayPayment(gateway)
         return
       }
 
@@ -124,8 +138,48 @@ function CheckoutPage() {
 
           <CheckoutPayment
             method={payment}
-            onChange={setPayment}
+            onChange={(nextPayment) => {
+              setPayment(nextPayment)
+              setGatewayPayment(null)
+            }}
           />
+
+          {gatewayPayment && (
+            <div className="checkout-card checkout-qr-card">
+              <h2 className="checkout-card-title">
+                {gatewayPayment.method === 'ZaloPay' ? 'Thanh toan ZaloPay' : 'Thanh toan QR chuyen khoan'}
+              </h2>
+              <div className="checkout-qr-content">
+                {gatewayPayment.qrCodeUrl && (
+                  <img
+                    className="checkout-qr-image"
+                    src={gatewayPayment.qrCodeUrl}
+                    alt="Ma QR thanh toan"
+                  />
+                )}
+                <div className="checkout-qr-info">
+                  <p>{gatewayPayment.instructions || 'Quet ma QR de thanh toan don hang.'}</p>
+                  <div className="checkout-qr-row">
+                    <span>Ma giao dich</span>
+                    <strong>{gatewayPayment.transactionCode}</strong>
+                  </div>
+                  <div className="checkout-qr-row">
+                    <span>So tien</span>
+                    <strong>{gatewayPayment.amount?.toLocaleString('vi-VN')}d</strong>
+                  </div>
+                  <button
+                    className="checkout-qr-btn"
+                    onClick={() => {
+                      clearCartState()
+                      window.location.href = gatewayPayment.paymentUrl
+                    }}
+                  >
+                    Toi da thanh toan
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right column — sticky summary */}
