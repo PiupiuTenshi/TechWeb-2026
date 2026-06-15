@@ -47,10 +47,16 @@ export function CartProvider({ children }) {
     async function handleAuthChanged(event) {
       if (event.detail?.type === 'login') {
         const snapshot = itemsRef.current
-        try {
-          await Promise.all(snapshot.map(item => cartApi.addItem(item.variantId, item.quantity)))
-        } catch {
-          // Nếu có item không sync được, cart vẫn load bình thường
+        if (snapshot.length > 0) {
+          try {
+            const serverCart = await cartApi.get()
+            const serverItems = Array.from(serverCart?.items || [])
+            const serverVariantIds = new Set(serverItems.map(i => i.variantId))
+            const newItems = snapshot.filter(item => !serverVariantIds.has(item.variantId))
+            await Promise.all(newItems.map(item => cartApi.addItem(item.variantId, item.quantity)))
+          } catch {
+            // ignore
+          }
         }
         await refresh(false)
         return

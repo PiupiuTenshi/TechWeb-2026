@@ -112,7 +112,7 @@ function LaptopPage() {
     let result = [...laptops]
 
     if (activeCategory) {
-      result = result.filter(p => p.category === activeCategory)
+      // CategoryCard UI hiện tại là visual — chưa có dữ liệu sub-category từ backend
     }
     result = result.filter(p => matchesFilters(p, activeFilters))
 

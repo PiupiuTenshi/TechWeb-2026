@@ -14,7 +14,7 @@ function formatPrice(price) {
 
 function orderGroup(status) {
   if (status === 'Completed') return 'done'
-  if (status === 'Shipping' || status === 'Paid') return 'shipping'
+  if (status === 'Shipped' || status === 'Paid') return 'shipping'
   return 'processing'
 }
 

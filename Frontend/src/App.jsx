@@ -13,6 +13,7 @@ import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import AccountPage from './pages/AccountPage'
 import AuthModal from './components/Auth/AuthModal'
+import NotFound from './pages/NotFound'
 
 // Admin
 import AdminLayout from './pages/admin/components/AdminLayout'
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/gio-hang" element={<CartPage />} />
                 <Route path="/thanh-toan" element={<CheckoutPage />} />
                 <Route path="/tai-khoan" element={<AccountPage />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <Footer />

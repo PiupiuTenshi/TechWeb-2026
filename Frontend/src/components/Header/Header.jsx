@@ -81,6 +81,12 @@ function Header() {
             placeholder="Bạn cần tìm gì?"
             value={searchValue}
             onChange={e => setSearchValue(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && searchValue.trim()) {
+                navigate(`/laptop?search=${encodeURIComponent(searchValue.trim())}`)
+                setSearchValue('')
+              }
+            }}
           />
         </div>
 
