@@ -9,6 +9,7 @@ function normalizeUser(user) {
   return {
     ...user,
     fullName: user.fullName || user.email,
+    roleName: user.roleName || user.role || user.Role,
   }
 }
 
