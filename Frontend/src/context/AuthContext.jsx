@@ -133,7 +133,7 @@ export function AuthProvider({ children }) {
     googleLogin,
     logout,
     updateUser,
-  }), [isOpen, mode, user, tokens, openLogin, openRegister, close, login, register, logout, updateUser])
+  }), [isOpen, mode, user, tokens, openLogin, openRegister, close, login, register, googleLogin, logout, updateUser])
 
   return (
     <AuthContext.Provider value={value}>

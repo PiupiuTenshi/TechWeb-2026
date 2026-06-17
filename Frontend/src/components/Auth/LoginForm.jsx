@@ -20,8 +20,14 @@ function LoginForm({ onSwitchToRegister }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    const normalizedEmail = email.trim()
+    if (!normalizedEmail || !password) {
+      setError('Vui lòng nhập email và mật khẩu.')
+      return
+    }
+
     setLoading(true)
-    const result = await login(email, password)
+    const result = await login(normalizedEmail, password)
     setLoading(false)
     if (result.ok) {
       close()

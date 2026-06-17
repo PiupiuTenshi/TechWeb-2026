@@ -22,11 +22,22 @@ function RegisterForm({ onSwitchToLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    const normalizedEmail = email.trim()
+    const fullName = `${lastName} ${firstName}`.trim()
+    if (!normalizedEmail || !fullName || !password) {
+      setError('Vui lòng nhập đầy đủ email, họ tên và mật khẩu.')
+      return
+    }
+    if (password.length < 6) {
+      setError('Mật khẩu cần có ít nhất 6 ký tự.')
+      return
+    }
+
     setLoading(true)
     const result = await register({
-      email,
+      email: normalizedEmail,
       password,
-      fullName: `${lastName} ${firstName}`.trim(),
+      fullName,
       phone: null,
     })
     setLoading(false)
