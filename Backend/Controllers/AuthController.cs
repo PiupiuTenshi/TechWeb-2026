@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Google.Apis.Auth;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -19,11 +20,13 @@ public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
 
-    public AuthController(AppDbContext context, IConfiguration configuration)
+    public AuthController(AppDbContext context, IConfiguration configuration, Microsoft.Extensions.Caching.Memory.IMemoryCache cache)
     {
         _context = context;
         _configuration = configuration;
+        _cache = cache;
     }
 
     [HttpPost("register")]
@@ -112,6 +115,14 @@ public class AuthController : ControllerBase
         {
             token.IsRevoked = true;
             await _context.SaveChangesAsync();
+        }
+
+        var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+        if (authHeader != null && authHeader.StartsWith("Bearer "))
+        {
+            var accessToken = authHeader.Substring("Bearer ".Length).Trim();
+            var minutes = int.TryParse(_configuration["Jwt:AccessTokenExpiry"], out var value) ? value : 15;
+            _cache.Set($"blacklist_{accessToken}", true, TimeSpan.FromMinutes(minutes));
         }
 
         return Ok(ApiResponse<object>.Ok(new { }, "Dang xuat thanh cong."));

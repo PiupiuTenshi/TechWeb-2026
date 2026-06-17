@@ -56,6 +56,8 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 var jwtKey = builder.Configuration["Jwt:Secret"] ?? builder.Configuration["Jwt:Key"]!;
+builder.Services.AddMemoryCache();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -68,6 +70,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var cache = context.HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>();
+                var token = context.SecurityToken as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                if (token != null && cache.TryGetValue($"blacklist_{token.RawData}", out _))
+                {
+                    context.Fail("Token is blacklisted");
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 builder.Services.AddAuthorization();
