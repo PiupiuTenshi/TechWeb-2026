@@ -121,8 +121,16 @@ public class AuthController : ControllerBase
         if (authHeader != null && authHeader.StartsWith("Bearer "))
         {
             var accessToken = authHeader.Substring("Bearer ".Length).Trim();
-            var minutes = int.TryParse(_configuration["Jwt:AccessTokenExpiry"], out var value) ? value : 15;
-            _cache.Set($"blacklist_{accessToken}", true, TimeSpan.FromMinutes(minutes));
+            var handler = new JwtSecurityTokenHandler();
+            if (handler.CanReadToken(accessToken))
+            {
+                var jwtToken = handler.ReadJwtToken(accessToken);
+                var remainingTime = jwtToken.ValidTo - DateTime.UtcNow;
+                if (remainingTime > TimeSpan.Zero)
+                {
+                    _cache.Set($"blacklist_{accessToken}", true, remainingTime);
+                }
+            }
         }
 
         return Ok(ApiResponse<object>.Ok(new { }, "Dang xuat thanh cong."));
