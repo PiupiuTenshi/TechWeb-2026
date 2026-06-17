@@ -125,7 +125,12 @@ public class AuthController : ControllerBase
 
         var email = payload.Email.ToLowerInvariant();
         var user = await _context.Users.Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+            .FirstOrDefaultAsync(u => u.Email == email);
+
+        if (user != null && !user.IsActive)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("ACCOUNT_LOCKED", "Tài khoản đã bị khóa."));
+        }
 
         if (user == null)
         {
