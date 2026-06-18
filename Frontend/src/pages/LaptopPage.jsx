@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react'
 import { useProducts } from '../context/ProductContext'
 import Breadcrumb from '../components/Breadcrumb/Breadcrumb'
 import BrandCardList from '../components/BrandCard/BrandCardList'
-import CategoryCardList from '../components/CategoryCard/CategoryCardList'
 import FilterBar from '../components/FilterBar/FilterBar'
 import SortBar from '../components/SortBar/SortBar'
 import ProductGrid from '../components/ProductGrid/ProductGrid'
@@ -103,17 +102,12 @@ function matchesFilters(product, activeFilters) {
 
 function LaptopPage() {
   const { laptops, loading, error } = useProducts()
-  const [activeCategory, setActiveCategory] = useState('')
   const [sortOrder, setSortOrder]           = useState('')
   const [visibleCount, setVisibleCount]     = useState(ITEMS_PER_PAGE)
   const [activeFilters, setActiveFilters]   = useState(EMPTY_FILTERS)
 
   const filtered = useMemo(() => {
     let result = [...laptops]
-
-    if (activeCategory) {
-      // CategoryCard UI hiện tại là visual — chưa có dữ liệu sub-category từ backend
-    }
     result = result.filter(p => matchesFilters(p, activeFilters))
 
     if (sortOrder === 'asc') {
@@ -123,17 +117,12 @@ function LaptopPage() {
     }
 
     return result
-  }, [laptops, activeCategory, sortOrder, activeFilters])
+  }, [laptops, sortOrder, activeFilters])
 
   const visible = filtered.slice(0, visibleCount)
   const hasMore = visibleCount < filtered.length
 
   const handleLoadMore = () => setVisibleCount(prev => prev + ITEMS_PER_PAGE)
-
-  const handleCategoryChange = (category) => {
-    setActiveCategory(category)
-    setVisibleCount(ITEMS_PER_PAGE)
-  }
 
   const handleFilterChange = (groupKey, value) => {
     setActiveFilters(prev => {
@@ -164,13 +153,6 @@ function LaptopPage() {
         brands={LAPTOP_BRANDS}
         activeBrand=""
         onBrandChange={() => {}}
-      />
-
-      <h2 className="laptop-page-section-heading">Chọn theo nhu cầu</h2>
-
-      <CategoryCardList
-        activeCategory={activeCategory}
-        onCategoryChange={handleCategoryChange}
       />
 
       <FilterBar

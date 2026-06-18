@@ -14,7 +14,8 @@ const ACCESSORY_FILTER_GROUPS = [
     options: [
       { value: 'Bàn phím', label: 'Bàn phím' },
       { value: 'Chuột', label: 'Chuột' },
-      { value: 'Tai nghe', label: 'Tai nghe' }
+      { value: 'Tai nghe', label: 'Tai nghe' },
+      { value: 'Sản phẩm khác', label: 'Sản phẩm khác' }
     ]
   }
 ]
@@ -28,9 +29,17 @@ const breadcrumbItems = [
 
 const EMPTY_FILTERS = { type: [] }
 
+const KNOWN_BRANDS = ['Bàn phím', 'Chuột', 'Tai nghe']
+
 function matchesFilters(product, activeFilters) {
   if (activeFilters.type.length > 0) {
-    if (!activeFilters.type.includes(product.brand)) return false
+    const selectedKnown = activeFilters.type.filter(v => v !== 'Sản phẩm khác')
+    const includeOther  = activeFilters.type.includes('Sản phẩm khác')
+
+    const matchesKnown = selectedKnown.includes(product.brand)
+    const matchesOther = includeOther && !KNOWN_BRANDS.includes(product.brand)
+
+    if (!matchesKnown && !matchesOther) return false
   }
   return true
 }
