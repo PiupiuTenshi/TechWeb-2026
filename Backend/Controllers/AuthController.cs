@@ -89,20 +89,35 @@ public class AuthController : ControllerBase
             .ThenInclude(x => x!.Role)
             .FirstOrDefaultAsync(x => x.Token == dto.RefreshToken);
 
-        if (existing?.User == null || existing.IsRevoked || existing.ExpiresAt <= DateTime.UtcNow)
+        if (existing?.User == null)
         {
             return Unauthorized(ApiResponse<object>.Fail("INVALID_REFRESH_TOKEN", "Refresh token khong hop le."));
         }
 
-        existing.IsRevoked = true;
-        var replacement = CreateRefreshToken(existing.UserId);
-        _context.RefreshTokens.Add(replacement);
-        await _context.SaveChangesAsync();
+        if (existing.IsRevoked)
+        {
+            var allUserTokens = await _context.RefreshTokens
+                .Where(t => t.UserId == existing.UserId && !t.IsRevoked)
+                .ToListAsync();
+            
+            foreach (var t in allUserTokens)
+            {
+                t.IsRevoked = true;
+            }
+            await _context.SaveChangesAsync();
+
+            return Unauthorized(ApiResponse<object>.Fail("TOKEN_COMPROMISED", "Phat hien truy cap bat thuong. Vui long dang nhap lai."));
+        }
+
+        if (existing.ExpiresAt <= DateTime.UtcNow)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("TOKEN_EXPIRED", "Phien dang nhap da het han."));
+        }
 
         return Ok(ApiResponse<object>.Ok(new
         {
             accessToken = GenerateJwtToken(existing.User),
-            refreshToken = replacement.Token,
+            refreshToken = existing.Token,
             user = ToUserDto(existing.User, existing.User.Role?.RoleName ?? "Customer")
         }));
     }
