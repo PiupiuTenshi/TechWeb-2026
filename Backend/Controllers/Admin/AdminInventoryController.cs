@@ -30,6 +30,7 @@ public class AdminInventoryController : ControllerBase
         var query = _context.Inventories
             .Include(i => i.Variant)
             .ThenInclude(v => v!.Product)
+            .Where(i => i.Variant != null && i.Variant.IsActive && i.Variant.Product != null && i.Variant.Product.IsActive)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(keyword))
