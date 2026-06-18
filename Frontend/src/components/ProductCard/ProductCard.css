@@ -134,3 +134,107 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ─── Cart action area ─────────────────────────────────────── */
+.product-card-cart-action {
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+/* "Thêm vào giỏ" button */
+.product-card-add-btn {
+  width: 100%;
+  padding: 8px 0;
+  border: 1.5px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s ease;
+  letter-spacing: 0.1px;
+}
+
+.product-card-add-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.product-card-add-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.product-card-add-btn:disabled,
+.product-card-add-btn.loading {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Quantity stepper  ( − 1 + ) */
+.product-card-qty-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 36px;
+  transition: border-color 0.18s ease;
+}
+
+.product-card-qty-stepper.updating {
+  opacity: 0.6;
+}
+
+.product-card-qty-btn {
+  flex: 0 0 36px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.product-card-qty-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  color: var(--text-primary);
+}
+
+.product-card-qty-btn:active:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.product-card-qty-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.product-card-qty-value {
+  flex: 1;
+  text-align: center;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+/* Error message under add button */
+.product-card-add-error {
+  font-size: var(--font-size-xs);
+  color: var(--primary);
+  margin-top: 4px;
+  text-align: center;
+}
+

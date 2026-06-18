@@ -2,6 +2,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Route, Routes } from 'react-router-dom'
 import './App.css'
 import AuthModal from './components/Auth/AuthModal'
+import CartToast from './components/CartToast/CartToast'
 import Footer from './components/Footer/Footer'
 import Header from './components/Header/Header'
 import ScrollToTop from './components/ScrollToTop/ScrollToTop'
@@ -65,6 +66,7 @@ function App() {
             </main>
             <Footer />
             <AuthModal />
+            <CartToast />
           </div>
         } />
       </Routes>
