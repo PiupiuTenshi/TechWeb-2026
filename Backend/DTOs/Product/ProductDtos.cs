@@ -11,10 +11,13 @@ public record ProductListItemDto(
     string Name,
     string Slug,
     string? Brand,
+    string? Description,
     string? ThumbnailUrl,
     decimal BasePrice,
     decimal? SalePrice,
     ProductCategoryDto? Category,
+    string? Tags,
+    bool IsActive,
     bool IsFeatured);
 
 public record ProductDetailDto(

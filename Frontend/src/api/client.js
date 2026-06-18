@@ -279,6 +279,18 @@ export const ordersApi = {
     const response = await apiRequest('/api/Orders')
     return response.data || []
   },
+
+  async detail(orderId) {
+    const response = await apiRequest(`/api/Orders/${orderId}`)
+    return response.data
+  },
+
+  async cancel(orderId) {
+    const response = await apiRequest(`/api/Orders/${orderId}/cancel`, {
+      method: 'PATCH',
+    })
+    return response.data
+  },
 }
 
 export const paymentsApi = {

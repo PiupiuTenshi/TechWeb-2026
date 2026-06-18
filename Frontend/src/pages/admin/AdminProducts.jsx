@@ -49,14 +49,25 @@ function ProductFormModal({ product, categories, onClose, onSaved }) {
         categoryId: Number(form.categoryId),
         basePrice: Number(form.basePrice),
         salePrice: form.salePrice ? Number(form.salePrice) : null,
-        images: [],
-        specifications: [],
-        variants: [],
       }
       if (isEdit) {
         await adminProductsApi.update(product.productId, payload)
       } else {
-        await adminProductsApi.create(payload)
+        await adminProductsApi.create({
+          ...payload,
+          images: form.thumbnailUrl
+            ? [{ imageUrl: form.thumbnailUrl, altText: form.name, sortOrder: 0 }]
+            : [],
+          specifications: [],
+          variants: [{
+            sku: `${form.slug.toUpperCase()}-STD`,
+            color: 'Default',
+            ram: null,
+            storage: null,
+            priceOffset: 0,
+            quantity: 20,
+          }],
+        })
       }
       onSaved()
     } catch (err) {

@@ -74,10 +74,13 @@ public class ProductsController : ControllerBase
                 p.Name,
                 p.Slug,
                 p.Brand,
+                p.Description,
                 p.ThumbnailUrl,
                 p.BasePrice,
                 p.SalePrice,
                 p.Category == null ? null : new ProductCategoryDto(p.Category.CategoryId, p.Category.Name, p.Category.Slug),
+                p.Tags,
+                p.IsActive,
                 p.IsFeatured))
             .ToListAsync();
 
@@ -123,6 +126,11 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProduct(CreateProductDto dto)
     {
+        if (!await _context.Categories.AnyAsync(c => c.CategoryId == dto.CategoryId && c.IsActive))
+        {
+            return BadRequest(ApiResponse<object>.Fail("CATEGORY_NOT_FOUND", "Danh muc khong ton tai."));
+        }
+
         if (await _context.Products.AnyAsync(p => p.Slug == dto.Slug))
         {
             return BadRequest(ApiResponse<object>.Fail("SLUG_EXISTS", "Slug da ton tai."));
@@ -142,17 +150,35 @@ public class ProductsController : ControllerBase
             IsFeatured = dto.IsFeatured
         };
 
-        foreach (var image in dto.Images)
+        var images = dto.Images ?? new List<ProductImageInputDto>();
+        if (images.Count == 0 && !string.IsNullOrWhiteSpace(dto.ThumbnailUrl))
+        {
+            images.Add(new ProductImageInputDto(dto.ThumbnailUrl, dto.Name, 0));
+        }
+
+        foreach (var image in images)
         {
             product.Images.Add(new ProductImage { ImageUrl = image.ImageUrl, AltText = image.AltText, SortOrder = image.SortOrder });
         }
 
-        foreach (var spec in dto.Specifications)
+        foreach (var spec in dto.Specifications ?? new List<SpecificationInputDto>())
         {
             product.Specifications.Add(new Specification { SpecKey = spec.SpecKey, SpecValue = spec.SpecValue, SortOrder = spec.SortOrder });
         }
 
-        foreach (var variant in dto.Variants)
+        var variants = dto.Variants ?? new List<ProductVariantInputDto>();
+        if (variants.Count == 0)
+        {
+            variants.Add(new ProductVariantInputDto(
+                $"{dto.Slug.ToUpperInvariant()}-STD",
+                "Default",
+                null,
+                null,
+                0,
+                20));
+        }
+
+        foreach (var variant in variants)
         {
             product.Variants.Add(new ProductVariant
             {
@@ -184,6 +210,16 @@ public class ProductsController : ControllerBase
         if (product == null)
         {
             return NotFound(ApiResponse<object>.Fail("NOT_FOUND", "San pham khong ton tai."));
+        }
+
+        if (!await _context.Categories.AnyAsync(c => c.CategoryId == dto.CategoryId && c.IsActive))
+        {
+            return BadRequest(ApiResponse<object>.Fail("CATEGORY_NOT_FOUND", "Danh muc khong ton tai."));
+        }
+
+        if (await _context.Products.AnyAsync(p => p.ProductId != id && p.Slug == dto.Slug))
+        {
+            return BadRequest(ApiResponse<object>.Fail("SLUG_EXISTS", "Slug da ton tai."));
         }
 
         product.CategoryId = dto.CategoryId;
