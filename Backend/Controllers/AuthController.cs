@@ -11,9 +11,7 @@ using TechShop.Backend.Data;
 using TechShop.Backend.DTOs;
 using TechShop.Backend.DTOs.Common;
 using TechShop.Backend.Models;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
+
 
 namespace TechShop.Backend.Controllers;
 
@@ -297,74 +295,47 @@ public class AuthController : ControllerBase
             {
                 Console.WriteLine("[MAIL] User found");
 
-                Console.WriteLine($"[MAIL] Host = {_configuration["Email:Host"]}");
-                Console.WriteLine($"[MAIL] Port = {_configuration["Email:Port"]}");
-                Console.WriteLine($"[MAIL] Username = {_configuration["Email:Username"]}");
-                Console.WriteLine($"[MAIL] Password Exists = {!string.IsNullOrWhiteSpace(_configuration["Email:Password"])}");
+                var brevoApiKey = _configuration["Brevo:ApiKey"];
+                var senderEmail = _configuration["Brevo:SenderEmail"] ?? "no-reply@techshop.vn";
+                var senderName = _configuration["Brevo:SenderName"] ?? "TechShop";
 
-                Console.WriteLine("[MAIL] Creating message");
-
-                var mailMessage = new MimeMessage();
-                mailMessage.From.Add(
-                    new MailboxAddress(
-                        "TechShop",
-                        _configuration["Email:Username"]
-                    )
-                );
-
-                mailMessage.To.Add(
-                    new MailboxAddress(
-                        user.FullName,
-                        email
-                    )
-                );
-
-                mailMessage.Subject = "Mật khẩu mới của bạn - TechShop";
-
-                mailMessage.Body = new TextPart("plain")
+                if (string.IsNullOrEmpty(brevoApiKey))
                 {
-                    Text =
-                        $"Xin chào {user.FullName},\n\n" +
-                        $"Mật khẩu của bạn đã được reset tự động.\n" +
-                        $"Mật khẩu mới của bạn là: {newPassword}\n\n" +
-                        $"Vui lòng đăng nhập và đổi lại mật khẩu ngay.\n\n" +
-                        $"Trân trọng."
+                    throw new Exception("Brevo ApiKey is not configured.");
+                }
+
+                Console.WriteLine("[MAIL] Preparing Brevo API request");
+
+                var requestData = new
+                {
+                    sender = new { name = senderName, email = senderEmail },
+                    to = new[] { new { email = email, name = user.FullName } },
+                    subject = "Mật khẩu mới của bạn - TechShop",
+                    textContent = $"Xin chào {user.FullName},\n\n" +
+                                  $"Mật khẩu của bạn đã được reset tự động.\n" +
+                                  $"Mật khẩu mới của bạn là: {newPassword}\n\n" +
+                                  $"Vui lòng đăng nhập và đổi lại mật khẩu ngay.\n\n" +
+                                  $"Trân trọng."
                 };
 
-                Console.WriteLine("[MAIL] Message created");
-
-                using (var smtpClient = new SmtpClient())
+                using (var client = new System.Net.Http.HttpClient())
                 {
-                    smtpClient.Timeout = 10000;
+                    client.DefaultRequestHeaders.Add("api-key", brevoApiKey);
+                    
+                    var jsonContent = System.Text.Json.JsonSerializer.Serialize(requestData);
+                    var content = new System.Net.Http.StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+                    
+                    Console.WriteLine("[MAIL] Sending via Brevo REST API...");
+                    var response = await client.PostAsync("https://api.brevo.com/v3/smtp/email", content);
 
-                    Console.WriteLine("[MAIL] Connecting...");
-
-                    await smtpClient.ConnectAsync(
-                        _configuration["Email:Host"],
-                        int.Parse(_configuration["Email:Port"] ?? "587"),
-                        SecureSocketOptions.StartTls
-                    );
-
-                    Console.WriteLine("[MAIL] Connected");
-
-                    Console.WriteLine("[MAIL] Authenticating...");
-
-                    await smtpClient.AuthenticateAsync(
-                        _configuration["Email:Username"],
-                        _configuration["Email:Password"]
-                    );
-
-                    Console.WriteLine("[MAIL] Authenticated");
-
-                    Console.WriteLine("[MAIL] Sending...");
-
-                    await smtpClient.SendAsync(mailMessage);
-
-                    Console.WriteLine("[MAIL] Sent");
-
-                    await smtpClient.DisconnectAsync(true);
-
-                    Console.WriteLine("[MAIL] Disconnected");
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        var errorContent = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"[BREVO_ERROR] {errorContent}");
+                        throw new Exception($"Lỗi gửi email qua Brevo API: {response.StatusCode}");
+                    }
+                    
+                    Console.WriteLine("[MAIL] Sent successfully via Brevo");
                 }
 
                 Console.WriteLine("[MAIL] Updating password");
