@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TechShop.Backend.Data;
-using TechShop.Backend.DTOs.Common;
+using TechShop.Backend.Services;
 
 namespace TechShop.Backend.Controllers;
 
@@ -9,23 +7,17 @@ namespace TechShop.Backend.Controllers;
 [Route("api/[controller]")]
 public class BrandsController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IBrandService _brandService;
 
-    public BrandsController(AppDbContext context)
+    public BrandsController(IBrandService brandService)
     {
-        _context = context;
+        _brandService = brandService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetBrands()
     {
-        var brands = await _context.Products
-            .Where(p => p.IsActive && p.Brand != null)
-            .Select(p => p.Brand!)
-            .Distinct()
-            .OrderBy(x => x)
-            .ToListAsync();
-
-        return Ok(ApiResponse<List<string>>.Ok(brands));
+        var result = await _brandService.GetBrandsAsync();
+        return Ok(result);
     }
 }

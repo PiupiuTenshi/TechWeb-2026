@@ -1,10 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TechShop.Backend.Data;
 using TechShop.Backend.DTOs;
-using TechShop.Backend.DTOs.Common;
-using TechShop.Backend.Models;
+using TechShop.Backend.Services;
 
 namespace TechShop.Backend.Controllers;
 
@@ -12,231 +9,65 @@ namespace TechShop.Backend.Controllers;
 [Route("api/[controller]")]
 public class CartController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly ICartService _cartService;
 
-    public CartController(AppDbContext context)
+    public CartController(ICartService cartService)
     {
-        _context = context;
+        _cartService = cartService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetCart()
     {
-        var cart = await GetOrCreateCart();
-        return Ok(ApiResponse<object>.Ok(MapCart(cart)));
+        var (userId, sessionId) = GetUserAndSession();
+        var response = await _cartService.GetCartAsync(userId, sessionId);
+        return response.Success ? Ok(response) : BadRequest(response);
     }
 
     [HttpPost("items")]
     public async Task<IActionResult> AddToCart(AddToCartDto dto)
     {
-        if (dto.Quantity <= 0)
-        {
-            return BadRequest(ApiResponse<object>.Fail("INVALID_QUANTITY", "So luong phai lon hon 0."));
-        }
-
-        var variant = await _context.ProductVariants.Include(v => v.Inventory).FirstOrDefaultAsync(v => v.VariantId == dto.VariantId && v.IsActive);
-        if (variant == null)
-        {
-            return NotFound(ApiResponse<object>.Fail("VARIANT_NOT_FOUND", "Bien the san pham khong ton tai."));
-        }
-
-        var cart = await GetOrCreateCart();
-        var existingItem = cart.Items.FirstOrDefault(i => i.VariantId == dto.VariantId);
-        var currentQuantity = existingItem != null ? existingItem.Quantity : 0;
-        var totalDesiredQuantity = currentQuantity + dto.Quantity;
-
-        if ((variant.Inventory?.Quantity ?? 0) < totalDesiredQuantity)
-        {
-            return BadRequest(ApiResponse<object>.Fail("OUT_OF_STOCK", "So luong ton kho khong du."));
-        }
-
-        if (existingItem != null)
-        {
-            existingItem.Quantity = totalDesiredQuantity;
-        }
-        else
-        {
-            _context.CartItems.Add(new CartItem
-            {
-                CartId = cart.CartId,
-                VariantId = dto.VariantId,
-                Quantity = dto.Quantity
-            });
-        }
-
-        cart.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-        cart = await LoadCart(cart.CartId);
-
-        return Ok(ApiResponse<object>.Ok(MapCart(cart), "Da them vao gio hang."));
+        var (userId, sessionId) = GetUserAndSession();
+        var response = await _cartService.AddToCartAsync(userId, sessionId, dto);
+        return response.Success ? Ok(response) : BadRequest(response);
     }
 
     [HttpPut("items/{id:guid}")]
     public async Task<IActionResult> UpdateItem(Guid id, UpdateCartItemDto dto)
     {
-        var cart = await GetOrCreateCart();
-        var item = cart.Items.FirstOrDefault(i => i.CartItemId == id);
-        if (item == null)
-        {
-            return NotFound(ApiResponse<object>.Fail("ITEM_NOT_FOUND", "San pham khong co trong gio hang."));
-        }
-
-        if (dto.Quantity <= 0)
-        {
-            _context.CartItems.Remove(item);
-        }
-        else
-        {
-            if ((item.Variant?.Inventory?.Quantity ?? 0) < dto.Quantity)
-            {
-                return BadRequest(ApiResponse<object>.Fail("OUT_OF_STOCK", "So luong ton kho khong du."));
-            }
-            item.Quantity = dto.Quantity;
-        }
-
-        cart.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-        cart = await LoadCart(cart.CartId);
-
-        return Ok(ApiResponse<object>.Ok(MapCart(cart), "Da cap nhat gio hang."));
+        var (userId, sessionId) = GetUserAndSession();
+        var response = await _cartService.UpdateItemAsync(userId, sessionId, id, dto);
+        return response.Success ? Ok(response) : BadRequest(response);
     }
 
     [HttpDelete("items/{id:guid}")]
     public async Task<IActionResult> DeleteItem(Guid id)
     {
-        var cart = await GetOrCreateCart();
-        var item = cart.Items.FirstOrDefault(i => i.CartItemId == id);
-        if (item == null)
-        {
-            return NotFound(ApiResponse<object>.Fail("ITEM_NOT_FOUND", "San pham khong co trong gio hang."));
-        }
-
-        _context.CartItems.Remove(item);
-        cart.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-        cart = await LoadCart(cart.CartId);
-
-        return Ok(ApiResponse<object>.Ok(MapCart(cart), "Da xoa san pham khoi gio hang."));
+        var (userId, sessionId) = GetUserAndSession();
+        var response = await _cartService.DeleteItemAsync(userId, sessionId, id);
+        return response.Success ? Ok(response) : BadRequest(response);
     }
 
     [HttpPost("apply-coupon")]
     public async Task<IActionResult> ApplyCoupon(ApplyCouponDto dto)
     {
-        var cart = await GetOrCreateCart();
-        var subtotal = CalculateSubtotal(cart);
-        var coupon = await _context.Coupons.FirstOrDefaultAsync(c => c.Code == dto.Code.Trim().ToUpper());
-        if (coupon == null || !coupon.IsActive || coupon.StartsAt > DateTime.UtcNow || coupon.ExpiresAt < DateTime.UtcNow || coupon.UsedCount >= coupon.UsageLimit)
-        {
-            return BadRequest(ApiResponse<object>.Fail("INVALID_COUPON", "Ma giam gia khong hop le."));
-        }
-
-        if (subtotal < coupon.MinOrderValue)
-        {
-            return BadRequest(ApiResponse<object>.Fail("MIN_ORDER_VALUE", "Don hang chua dat gia tri toi thieu."));
-        }
-
-        cart.CouponId = coupon.CouponId;
-        cart.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-        cart = await LoadCart(cart.CartId);
-
-        return Ok(ApiResponse<object>.Ok(MapCart(cart), "Da ap dung ma giam gia."));
+        var (userId, sessionId) = GetUserAndSession();
+        var response = await _cartService.ApplyCouponAsync(userId, sessionId, dto);
+        return response.Success ? Ok(response) : BadRequest(response);
     }
 
-    private async Task<Cart> GetOrCreateCart()
+    private (Guid? UserId, string SessionId) GetUserAndSession()
     {
-        var userId = GetUserIdFromToken();
-        var sessionId = userId == null ? GetOrCreateSessionId() : null;
-        var cart = userId != null
-            ? await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Variant).ThenInclude(v => v!.Product)
-                .Include(c => c.Items).ThenInclude(i => i.Variant).ThenInclude(v => v!.Inventory)
-                .Include(c => c.Coupon)
-                .FirstOrDefaultAsync(c => c.UserId == userId)
-            : await _context.Carts.Include(c => c.Items).ThenInclude(i => i.Variant).ThenInclude(v => v!.Product)
-                .Include(c => c.Items).ThenInclude(i => i.Variant).ThenInclude(v => v!.Inventory)
-                .Include(c => c.Coupon)
-                .FirstOrDefaultAsync(c => c.SessionId == sessionId);
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userId = Guid.TryParse(userIdString, out var uid) ? (Guid?)uid : null;
 
-        if (cart == null)
-        {
-            cart = new Cart { UserId = userId, SessionId = sessionId };
-            _context.Carts.Add(cart);
-            await _context.SaveChangesAsync();
-        }
+        var sessionId = Request.Headers.TryGetValue("X-Session-Id", out var id) ? id.ToString() : Guid.NewGuid().ToString();
 
         if (userId == null && !Request.Headers.ContainsKey("X-Session-Id"))
         {
-            Response.Headers["X-Session-Id"] = cart.SessionId;
+            Response.Headers["X-Session-Id"] = sessionId;
         }
 
-        return cart;
-    }
-
-    private async Task<Cart> LoadCart(Guid id)
-        => await _context.Carts
-            .Include(c => c.Items).ThenInclude(i => i.Variant).ThenInclude(v => v!.Product)
-            .Include(c => c.Items).ThenInclude(i => i.Variant).ThenInclude(v => v!.Inventory)
-            .Include(c => c.Coupon)
-            .FirstAsync(c => c.CartId == id);
-
-    private Guid? GetUserIdFromToken()
-    {
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        return Guid.TryParse(userIdString, out var userId) ? userId : null;
-    }
-
-    private string GetOrCreateSessionId()
-        => Request.Headers.TryGetValue("X-Session-Id", out var sessionId) ? sessionId.ToString() : Guid.NewGuid().ToString();
-
-    private static decimal CalculateSubtotal(Cart cart)
-        => cart.Items.Sum(item => item.Quantity * ((item.Variant?.Product?.SalePrice ?? item.Variant?.Product?.BasePrice ?? 0) + (item.Variant?.PriceOffset ?? 0)));
-
-    private static decimal CalculateDiscount(Cart cart, decimal subtotal)
-    {
-        if (cart.Coupon == null)
-        {
-            return 0;
-        }
-
-        var discount = cart.Coupon.DiscountType == "Percent"
-            ? subtotal * cart.Coupon.DiscountValue / 100
-            : cart.Coupon.DiscountValue;
-
-        return cart.Coupon.MaxDiscount.HasValue ? Math.Min(discount, cart.Coupon.MaxDiscount.Value) : discount;
-    }
-
-    private static object MapCart(Cart cart)
-    {
-        var subtotal = CalculateSubtotal(cart);
-        var discount = CalculateDiscount(cart, subtotal);
-        return new
-        {
-            cart.CartId,
-            cart.UserId,
-            cart.SessionId,
-            coupon = cart.Coupon == null ? null : new { cart.Coupon.Code, cart.Coupon.DiscountType, cart.Coupon.DiscountValue },
-            items = cart.Items.Select(item =>
-            {
-                var product = item.Variant?.Product;
-                var unitPrice = (product?.SalePrice ?? product?.BasePrice ?? 0) + (item.Variant?.PriceOffset ?? 0);
-                return new
-                {
-                    item.CartItemId,
-                    item.VariantId,
-                    productId = product?.ProductId,
-                    productName = product?.Name,
-                    productSlug = product?.Slug,
-                    thumbnailUrl = product?.ThumbnailUrl,
-                    variantInfo = item.Variant == null ? null : string.Join(" / ", new[] { item.Variant.Color, item.Variant.RAM, item.Variant.Storage }.Where(x => !string.IsNullOrWhiteSpace(x))),
-                    item.Quantity,
-                    unitPrice,
-                    subtotal = unitPrice * item.Quantity,
-                    stock = item.Variant?.Inventory?.Quantity ?? 0
-                };
-            }),
-            subtotal,
-            discount,
-            total = subtotal - discount
-        };
+        return (userId, sessionId);
     }
 }

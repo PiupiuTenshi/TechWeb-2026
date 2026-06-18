@@ -1,9 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TechShop.Backend.Data;
-using TechShop.Backend.DTOs.Common;
-using TechShop.Backend.DTOs.Product;
-using TechShop.Backend.Models;
+using TechShop.Backend.Services;
 
 namespace TechShop.Backend.Controllers;
 
@@ -11,36 +7,17 @@ namespace TechShop.Backend.Controllers;
 [Route("api/[controller]")]
 public class CategoriesController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly ICategoryService _categoryService;
 
-    public CategoriesController(AppDbContext context)
+    public CategoriesController(ICategoryService categoryService)
     {
-        _context = context;
+        _categoryService = categoryService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetCategories()
     {
-        var categories = await _context.Categories
-            .Where(c => c.IsActive)
-            .OrderBy(c => c.DisplayOrder)
-            .ToListAsync();
-
-        var tree = categories
-            .Where(c => c.ParentId == null)
-            .Select(c => MapCategory(c, categories))
-            .ToList();
-
-        return Ok(ApiResponse<List<CategoryDto>>.Ok(tree));
+        var result = await _categoryService.GetCategoriesAsync();
+        return Ok(result);
     }
-
-    private static CategoryDto MapCategory(Category category, List<Category> all)
-        => new(
-            category.CategoryId,
-            category.Name,
-            category.Slug,
-            all.Where(c => c.ParentId == category.CategoryId)
-                .OrderBy(c => c.DisplayOrder)
-                .Select(c => MapCategory(c, all))
-                .ToList());
 }
