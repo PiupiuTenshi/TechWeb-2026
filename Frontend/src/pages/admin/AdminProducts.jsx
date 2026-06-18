@@ -23,6 +23,14 @@ function ProductFormModal({ product, categories, onClose, onSaved }) {
     isFeatured: product?.isFeatured || false,
     isActive: product?.isActive ?? true,
     specifications: product?.specifications || [],
+    variants: product?.variants ? product.variants.map(v => ({ 
+      sku: v.sku || '', 
+      color: v.color || '', 
+      ram: v.ram || '', 
+      storage: v.storage || '', 
+      priceOffset: v.priceOffset || 0, 
+      quantity: v.stock || 0 
+    })) : [],
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -76,6 +84,22 @@ function ProductFormModal({ product, categories, onClose, onSaved }) {
     handleChange('specifications', newSpecs)
   }
 
+  const handleVariantChange = (index, key, val) => {
+    const newVariants = [...form.variants]
+    newVariants[index][key] = val
+    handleChange('variants', newVariants)
+  }
+
+  const addVariant = () => {
+    handleChange('variants', [...form.variants, { sku: '', color: '', ram: '', storage: '', priceOffset: 0, quantity: 0 }])
+  }
+
+  const removeVariant = (index) => {
+    const newVariants = [...form.variants]
+    newVariants.splice(index, 1)
+    handleChange('variants', newVariants)
+  }
+
   const autoSlug = (name) =>
     name.toLowerCase()
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -99,7 +123,27 @@ function ProductFormModal({ product, categories, onClose, onSaved }) {
         salePrice: form.salePrice ? Number(form.salePrice) : null,
         images: [],
         specifications: form.specifications.filter(s => s.specKey.trim() !== '').map((s, idx) => ({ ...s, sortOrder: idx })),
-        variants: [],
+        variants: (() => {
+          let validVariants = form.variants.filter(v => v.sku && v.sku.trim() !== '');
+          if (validVariants.length === 0) {
+            validVariants = [{
+              sku: (form.slug || 'DEFAULT').toUpperCase() + '-BASE',
+              color: '',
+              ram: '',
+              storage: '',
+              priceOffset: 0,
+              quantity: 0
+            }];
+          }
+          return validVariants.map(v => ({
+            sku: v.sku,
+            color: v.color || null,
+            ram: v.ram || null,
+            storage: v.storage || null,
+            priceOffset: Number(v.priceOffset) || 0,
+            quantity: Number(v.quantity) || 0
+          }));
+        })(),
       }
       if (isEdit) {
         await adminProductsApi.update(product.productId, payload)
@@ -245,6 +289,38 @@ function ProductFormModal({ product, categories, onClose, onSaved }) {
                       <button type="button" className="admin-btn admin-btn-ghost admin-btn-icon" style={{ color: '#dc2626', marginTop: 4 }} onClick={() => removeSpec(idx)}>
                         <X size={16} />
                       </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="admin-form-group" style={{ border: '1px solid #e2e8f0', padding: 16, borderRadius: 8, background: '#f8fafc' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <label className="admin-form-label" style={{ marginBottom: 0, fontWeight: 600 }}>Biến thể & Tồn kho</label>
+                <button type="button" className="admin-btn admin-btn-secondary" style={{ padding: '6px 12px', fontSize: 13 }} onClick={addVariant}>
+                  <Plus size={14} style={{ marginRight: 4 }} /> Thêm biến thể
+                </button>
+              </div>
+              {form.variants.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#94a3b8', fontStyle: 'italic' }}>Chưa có biến thể nào. Hệ thống sẽ không tạo tồn kho cho sản phẩm này.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto', paddingRight: 4 }}>
+                  {form.variants.map((v, idx) => (
+                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#fff', padding: 12, borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <input className="admin-form-input" style={{ flex: 1.5 }} placeholder="SKU (Bắt buộc)" value={v.sku} onChange={e => handleVariantChange(idx, 'sku', e.target.value)} required />
+                        <input className="admin-form-input" style={{ flex: 1 }} placeholder="Màu sắc" value={v.color} onChange={e => handleVariantChange(idx, 'color', e.target.value)} />
+                        <input className="admin-form-input" style={{ flex: 1 }} placeholder="RAM" value={v.ram} onChange={e => handleVariantChange(idx, 'ram', e.target.value)} />
+                        <button type="button" className="admin-btn admin-btn-ghost admin-btn-icon" style={{ color: '#dc2626' }} onClick={() => removeVariant(idx)}>
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <input className="admin-form-input" style={{ flex: 1 }} placeholder="Ổ cứng/Storage" value={v.storage} onChange={e => handleVariantChange(idx, 'storage', e.target.value)} />
+                        <input className="admin-form-input" type="number" style={{ flex: 1 }} placeholder="Giá chênh (VD: 500000)" value={v.priceOffset} onChange={e => handleVariantChange(idx, 'priceOffset', e.target.value)} />
+                        <input className="admin-form-input" type="number" style={{ flex: 1 }} placeholder="Tồn kho ban đầu" value={v.quantity} onChange={e => handleVariantChange(idx, 'quantity', e.target.value)} />
+                      </div>
                     </div>
                   ))}
                 </div>
