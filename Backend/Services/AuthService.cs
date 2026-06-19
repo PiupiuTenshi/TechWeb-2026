@@ -54,7 +54,7 @@ public class AuthService : IAuthService
         return ApiResponse<object>.Ok(ToUserDto(user, "Customer"), "Dang ky thanh cong.");
     }
 
-    public async Task<ApiResponse<object>> LoginAsync(LoginDto dto)
+    public async Task<ApiResponse<object>> LoginAsync(LoginDto dto, string? sessionId = null)
     {
         var email = dto.Email.Trim().ToLowerInvariant();
         var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
@@ -62,6 +62,8 @@ public class AuthService : IAuthService
         {
             return ApiResponse<object>.Fail("INVALID_CREDENTIALS", "Email hoac mat khau khong dung.");
         }
+
+        await MergeCartAsync(user.UserId, sessionId);
 
         var accessToken = GenerateJwtToken(user);
         var refreshToken = CreateRefreshToken(user.UserId);
@@ -143,7 +145,7 @@ public class AuthService : IAuthService
         return ApiResponse<object>.Ok(new { }, "Dang xuat thanh cong.");
     }
 
-    public async Task<ApiResponse<object>> GoogleLoginAsync(GoogleLoginDto dto)
+    public async Task<ApiResponse<object>> GoogleLoginAsync(GoogleLoginDto dto, string? sessionId = null)
     {
         var settings = new GoogleJsonWebSignature.ValidationSettings();
         var payload = await GoogleJsonWebSignature.ValidateAsync(dto.Credential, settings);
@@ -172,12 +174,15 @@ public class AuthService : IAuthService
                 RoleId = customerRoleId,
             };
             _context.Users.Add(user);
+            await _context.SaveChangesAsync();
         }
         else
         {
             user.GoogleId ??= payload.Subject;
             user.AvatarUrl ??= payload.Picture;
         }
+
+        await MergeCartAsync(user.UserId, sessionId);
 
         var accessToken = GenerateJwtToken(user);
         var refreshToken = CreateRefreshToken(user.UserId);
@@ -375,4 +380,51 @@ public class AuthService : IAuthService
         user.RoleId,
         Role = roleName
     };
+
+    private async Task MergeCartAsync(Guid userId, string? sessionId)
+    {
+        if (string.IsNullOrEmpty(sessionId)) return;
+
+        var sessionCart = await _context.Carts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.SessionId == sessionId);
+
+        if (sessionCart == null) return;
+
+        if (sessionCart.Items.Count == 0)
+        {
+            _context.Carts.Remove(sessionCart);
+            await _context.SaveChangesAsync();
+            return;
+        }
+
+        var userCart = await _context.Carts
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.UserId == userId);
+
+        if (userCart == null)
+        {
+            sessionCart.SessionId = null;
+            sessionCart.UserId = userId;
+        }
+        else
+        {
+            foreach (var sessionItem in sessionCart.Items.ToList())
+            {
+                var userItem = userCart.Items.FirstOrDefault(i => i.VariantId == sessionItem.VariantId);
+                if (userItem != null)
+                {
+                    userItem.Quantity += sessionItem.Quantity;
+                    _context.CartItems.Remove(sessionItem);
+                }
+                else
+                {
+                    sessionItem.CartId = userCart.CartId;
+                    userCart.Items.Add(sessionItem);
+                }
+            }
+            _context.Carts.Remove(sessionCart);
+        }
+        await _context.SaveChangesAsync();
+    }
 }

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { cartApi } from '../api/client'
+import { cartApi, clearSessionId } from '../api/client'
 import { mapCart } from '../api/mappers'
 
 const CartContext = createContext(null)
@@ -75,6 +75,7 @@ export function CartProvider({ children }) {
   useEffect(() => {
     async function handleAuthChanged(event) {
       if (event.detail?.type === 'login') {
+        clearSessionId()
         const snapshot = itemsRef.current
         if (snapshot.length > 0) {
           try {

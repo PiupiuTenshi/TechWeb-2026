@@ -101,6 +101,10 @@ function setSessionId(sessionId) {
   }
 }
 
+export function clearSessionId() {
+  localStorage.removeItem(SESSION_STORAGE_KEY)
+}
+
 async function apiRequest(path, options = {}) {
   const auth = getAuthState()
   const sessionId = getSessionId()

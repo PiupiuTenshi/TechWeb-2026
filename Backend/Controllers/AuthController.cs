@@ -28,7 +28,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)
     {
-        var response = await _authService.LoginAsync(dto);
+        var sessionId = Request.Headers["X-Session-Id"].FirstOrDefault();
+        var response = await _authService.LoginAsync(dto, sessionId);
         if (!response.Success)
             return Unauthorized(response);
         return Ok(response);
@@ -54,7 +55,8 @@ public class AuthController : ControllerBase
     [HttpPost("google-login")]
     public async Task<IActionResult> GoogleLogin(GoogleLoginDto dto)
     {
-        var response = await _authService.GoogleLoginAsync(dto);
+        var sessionId = Request.Headers["X-Session-Id"].FirstOrDefault();
+        var response = await _authService.GoogleLoginAsync(dto, sessionId);
         if (!response.Success)
             return Unauthorized(response);
         return Ok(response);
