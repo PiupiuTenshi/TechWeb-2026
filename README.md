@@ -1,6 +1,5 @@
 <div align="center">
-  <!-- TODO: Thay thế đường dẫn ảnh bằng Logo thực tế của dự án -->
-  <img src="https://via.placeholder.com/150" alt="TechShop Logo" width="120" />
+  <img src="Frontend/public/favicon.jpg" alt="TechShop Logo" width="120" style="border-radius: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 16px;" />
 
   # 🛒 TechShop
 
@@ -74,7 +73,19 @@ cd TechWeb-2026
 ```bash
 cd Backend
 ```
-*   Đảm bảo bạn đã có chuỗi kết nối (Connection String) trong `appsettings.Development.json` hoặc `appsettings.json` trỏ tới SQL Server của bạn.
+*   **Cấu hình Biến môi trường:** Mở/tạo file `appsettings.Development.json` (hoặc `appsettings.json`) và thêm cấu hình chuỗi kết nối Database cũng như JWT Secret Key:
+    ```json
+    {
+      "ConnectionStrings": {
+        "DefaultConnection": "Server=localhost;Database=TechShopDb;User Id=sa;Password=MatKhauCuaBan123@;TrustServerCertificate=True;"
+      },
+      "Jwt": {
+        "Key": "chuoi-ki-tu-bi-mat-cua-ban-dai-hon-32-ki-tu",
+        "Issuer": "http://localhost:5000",
+        "Audience": "http://localhost:5173"
+      }
+    }
+    ```
 *   Cài đặt EF Core CLI (nếu chưa có): `dotnet tool install --global dotnet-ef`
 *   Chạy Migrations để tạo Database:
 ```bash
@@ -87,11 +98,18 @@ dotnet run
 *   *API sẽ chạy mặc định. Truy cập `/swagger` để xem tài liệu API.*
 
 ### 3. Thiết lập Frontend (React)
-Mở một terminal mới:
+Mở một terminal mới và trỏ vào thư mục Frontend:
 ```bash
 cd Frontend
 ```
-*   Tạo file `.env` (bạn có thể copy từ `.env.example`) và cập nhật URL Backend (ví dụ: `VITE_API_URL=http://localhost:5000`).
+*   **Cấu hình Biến môi trường:** Tạo file `.env` ở gốc thư mục `Frontend` (bạn có thể copy từ `.env.example` nếu có) và cấu hình các thông số cần thiết:
+    ```env
+    # Đường dẫn tới Backend API
+    VITE_API_URL=http://localhost:5000
+    
+    # Các cấu hình khác nếu có
+    # VITE_GOOGLE_CLIENT_ID=your-google-client-id
+    ```
 *   Cài đặt dependencies và chạy project:
 ```bash
 npm install
@@ -128,11 +146,11 @@ Dự án đang được phát triển tích cực. Vui lòng xem chi tiết kế
 
 ## 👥 Đội ngũ phát triển (Contributors)
 
-| Developer | Role | GitHub |
-| :--- | :--- | :--- |
-| **Dev A (PiupuiTenshi)** | Backend .NET | [@PiupuiTenshi](https://github.com/PiupuiTenshi) |
-| **Dev B (nguyenvanquyen-p3t)** | Frontend React | [@nguyenvanquyen-p3t](https://github.com/nguyenvanquyen-p3t) |
-| **Dev C (Chyeonma)** | Database & DevOps | [@Chyeonma](https://github.com/Chyeonma) |
+| Avatar | Developer | Role | GitHub |
+| :---: | :--- | :--- | :--- |
+| <img src="https://github.com/PiupuiTenshi.png" width="40" style="border-radius:50%;" alt="PiupuiTenshi"/> | **Dev A (PiupuiTenshi)** | Backend .NET | [@PiupuiTenshi](https://github.com/PiupuiTenshi) |
+| <img src="https://github.com/nguyenvanquyen-p3t.png" width="40" style="border-radius:50%;" alt="nguyenvanquyen-p3t"/> | **Dev B (nguyenvanquyen-p3t)** | Frontend React | [@nguyenvanquyen-p3t](https://github.com/nguyenvanquyen-p3t) |
+| <img src="https://github.com/Chyeonma.png" width="40" style="border-radius:50%;" alt="Chyeonma"/> | **Dev C (Chyeonma)** | Database & DevOps | [@Chyeonma](https://github.com/Chyeonma) |
 
 ---
 <div align="center">
