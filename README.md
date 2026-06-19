@@ -82,7 +82,6 @@ Tại thư mục `Backend`, tạo file `appsettings.json` (có thể copy từ `
 {
   "ConnectionStrings": {
     // Chuỗi kết nối đến PostgreSQL. 
-    // LƯU Ý: Nếu chạy bằng Docker (có service tên là 'db'), hãy đổi Host=localhost thành Host=db
     "DefaultConnection": "Host=db;Port=5432;Database=TechShopDB;Username=postgres;Password=Iloveyou123@123"
   },
   "Logging": {
@@ -193,6 +192,7 @@ TechWeb-2026/
 
 ## 🗺 Lộ trình phát triển (Roadmap)
 Dự án đang được phát triển tích cực. Vui lòng xem chi tiết kế hoạch các tính năng và phân công công việc tại [TECHSHOP_DEV_ROADMAP.md](./TECHSHOP_DEV_ROADMAP.md).
+LƯU Ý: File này đã cũ và không còn được cập nhật!
 
 ## 👥 Đội ngũ phát triển (Contributors)
 
