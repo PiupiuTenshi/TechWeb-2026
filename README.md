@@ -4,10 +4,12 @@
   # 🛒 TechShop
 
   **Nền tảng E-Commerce hiện đại dành cho thiết bị công nghệ**
+  
+  ### 🌐 [**TRẢI NGHIỆM WEBSITE TRỰC TUYẾN TẠI ĐÂY (LIVE DEMO)**](https://techshop-55gp.vercel.app/) 🌐
 
   [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
   [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
-  [![SQL Server](https://img.shields.io/badge/SQL_Server-2022-CC292B?style=for-the-badge&logo=microsoft-sql-server&logoColor=white)](https://www.microsoft.com/sql-server)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
   [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
   [Khám phá Frontend](#frontend) •
@@ -50,77 +52,85 @@
 *   **Authentication:** BCrypt, JWT Bearer
 
 ### Database & DevOps
-*   **Cơ sở dữ liệu:** SQL Server 2022
+*   **Cơ sở dữ liệu:** PostgreSQL 15 (Supabase / Local)
 *   **Containerization:** Docker & Docker Compose
 *   **Công cụ:** Swagger UI (API Docs)
 
-## 🚀 Hướng dẫn cài đặt (Getting Started)
+## 🚀 Hướng dẫn cài đặt và khởi chạy (Getting Started)
 
-Làm theo các bước dưới đây để thiết lập môi trường và chạy dự án trên máy của bạn.
+Dự án có thể được khởi chạy theo hai cách trên môi trường Local. Chúng tôi **khuyến nghị sử dụng Docker** để thiết lập nhanh nhất và đồng bộ môi trường.
 
 ### Yêu cầu tiên quyết (Prerequisites)
-*   [Node.js](https://nodejs.org/) (Phiên bản LTS, khuyên dùng v18+)
-*   [.NET SDK 10](https://dotnet.microsoft.com/)
-*   [SQL Server 2022](https://www.microsoft.com/sql-server) hoặc [Docker](https://www.docker.com/)
+*   **Nếu dùng Docker (Khuyên dùng):** Cài đặt [Docker Desktop](https://www.docker.com/).
+*   **Nếu chạy thủ công:** Cài đặt [Node.js](https://nodejs.org/) (v18+), [.NET SDK 10](https://dotnet.microsoft.com/), và [PostgreSQL](https://www.postgresql.org/) (hoặc sử dụng Supabase).
 
-### 1. Clone repository
+### Bước 1. Clone repository
+Dù chạy bằng cách nào, trước tiên bạn cần tải mã nguồn về máy:
 ```bash
 git clone https://github.com/PiupuiTenshi/TechWeb-2026.git
 cd TechWeb-2026
 ```
 
-### 2. Thiết lập Backend (.NET API)
+---
+
+### Cách 1. Chạy tự động bằng Docker (Khuyên dùng 🌟)
+Phương pháp này sẽ tự động khởi tạo Frontend, Backend API, và cả Database PostgreSQL trong các container riêng biệt mà không cần cài đặt thêm gì.
+
+1. Tại thư mục gốc `TechWeb-2026`, mở terminal và chạy lệnh:
+   ```bash
+   docker-compose up --build
+   ```
+2. Đợi quá trình tải và build hoàn tất. Hệ thống sẽ có sẵn tại:
+   *   **Frontend:** `http://localhost:5173`
+   *   **Backend API & Swagger:** `http://localhost:5000/swagger`
+   *   **Database:** `localhost:5432`
+
+---
+
+### Cách 2. Chạy thủ công (Manual Setup)
+Nếu bạn muốn phát triển từng phần độc lập mà không dùng Docker, hãy làm theo các bước sau:
+
+#### Thiết lập Backend (.NET API)
 ```bash
 cd Backend
 ```
-*   **Cấu hình Biến môi trường:** Mở/tạo file `appsettings.Development.json` (hoặc `appsettings.json`) và thêm cấu hình chuỗi kết nối Database cũng như JWT Secret Key:
+1.  **Cấu hình Biến môi trường:** Mở/tạo file `appsettings.Development.json` (hoặc `appsettings.json`) và cấu hình chuỗi kết nối Database cũng như JWT Secret Key:
     ```json
     {
       "ConnectionStrings": {
-        "DefaultConnection": "Server=localhost;Database=TechShopDb;User Id=sa;Password=MatKhauCuaBan123@;TrustServerCertificate=True;"
+        "DefaultConnection": "Host=localhost;Port=5432;Database=techshop;Username=postgres;Password=local_password_123;"
       },
       "Jwt": {
         "Key": "chuoi-ki-tu-bi-mat-cua-ban-dai-hon-32-ki-tu",
-        "Issuer": "http://localhost:5000",
-        "Audience": "http://localhost:5173"
+        "Issuer": "TechShop",
+        "Audience": "TechShopClient"
       }
     }
     ```
-*   Cài đặt EF Core CLI (nếu chưa có): `dotnet tool install --global dotnet-ef`
-*   Chạy Migrations để tạo Database:
-```bash
-dotnet ef database update
-```
-*   Khởi chạy Backend:
-```bash
-dotnet run
-```
-*   *API sẽ chạy mặc định. Truy cập `/swagger` để xem tài liệu API.*
+2.  Cài đặt EF Core CLI (nếu chưa có): `dotnet tool install --global dotnet-ef`
+3.  Chạy Migrations để khởi tạo Database:
+    ```bash
+    dotnet ef database update
+    ```
+4.  Khởi chạy Backend:
+    ```bash
+    dotnet run
+    ```
 
-### 3. Thiết lập Frontend (React)
+#### Thiết lập Frontend (React)
 Mở một terminal mới và trỏ vào thư mục Frontend:
 ```bash
 cd Frontend
 ```
-*   **Cấu hình Biến môi trường:** Tạo file `.env` ở gốc thư mục `Frontend` (bạn có thể copy từ `.env.example` nếu có) và cấu hình các thông số cần thiết:
+1.  **Cấu hình Biến môi trường:** Tạo file `.env` ở gốc thư mục `Frontend` (bạn có thể copy từ `.env.example` nếu có):
     ```env
-    # Đường dẫn tới Backend API
     VITE_API_URL=http://localhost:5000
-    
-    # Các cấu hình khác nếu có
-    # VITE_GOOGLE_CLIENT_ID=your-google-client-id
     ```
-*   Cài đặt dependencies và chạy project:
-```bash
-npm install
-npm run dev
-```
-
-### 4. Chạy bằng Docker (Khuyên dùng)
-Nếu bạn đã cài Docker, bạn có thể khởi chạy toàn bộ hệ thống bằng 1 lệnh duy nhất ở thư mục gốc:
-```bash
-docker-compose up --build
-```
+2.  Cài đặt dependencies và khởi chạy:
+    ```bash
+    npm install
+    npm run dev
+    ```
 
 ## 📂 Cấu trúc thư mục (Folder Structure)
 
