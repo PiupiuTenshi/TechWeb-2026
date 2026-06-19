@@ -4,9 +4,29 @@ import { cartApi } from '../api/client'
 import { mapCart } from '../api/mappers'
 
 const CartContext = createContext(null)
+const CART_SELECTION_STORAGE_KEY = 'techshop_cart_selected_ids'
 
 function selectedMap(items) {
   return Object.fromEntries(items.map(item => [item.id, item.selected]))
+}
+
+function readStoredSelection() {
+  try {
+    const raw = localStorage.getItem(CART_SELECTION_STORAGE_KEY)
+    const ids = raw ? JSON.parse(raw) : []
+    return Object.fromEntries(Array.isArray(ids) ? ids.map(id => [id, true]) : [])
+  } catch {
+    return {}
+  }
+}
+
+function storeSelection(items) {
+  try {
+    const ids = items.filter(item => item.selected).map(item => item.id)
+    localStorage.setItem(CART_SELECTION_STORAGE_KEY, JSON.stringify(ids))
+  } catch {
+    // ignore storage errors
+  }
 }
 
 export function CartProvider({ children }) {
@@ -23,10 +43,16 @@ export function CartProvider({ children }) {
 
   const applyCart = useCallback((cart, nextSelected = null, fallbackSelected = false) => {
     setItems(prev => {
-      const selection = nextSelected || selectedMap(prev)
+      const selection = nextSelected || (prev.length > 0 ? selectedMap(prev) : readStoredSelection())
       return mapCart(cart, selection, fallbackSelected)
     })
   }, [])
+
+  useEffect(() => {
+    if (!loading) {
+      storeSelection(items)
+    }
+  }, [items, loading])
 
   const refresh = useCallback(async (fallbackSelected = false) => {
     setLoading(true)
@@ -124,6 +150,11 @@ export function CartProvider({ children }) {
     setItems(prev => prev.map(item => ({ ...item, selected })))
   }, [])
 
+  const selectCartItems = useCallback((ids) => {
+    const selectedIds = new Set(ids)
+    setItems(prev => prev.map(item => ({ ...item, selected: selectedIds.has(item.id) })))
+  }, [])
+
   const removeSelected = useCallback(async () => {
     const selected = items.filter(item => item.selected)
     await Promise.all(selected.map(item => cartApi.deleteItem(item.id)))
@@ -158,6 +189,7 @@ export function CartProvider({ children }) {
     updateQuantity,
     toggleSelected,
     setAllSelected,
+    selectCartItems,
     removeSelected,
     clearCartState,
   }), [
@@ -177,6 +209,7 @@ export function CartProvider({ children }) {
     updateQuantity,
     toggleSelected,
     setAllSelected,
+    selectCartItems,
     removeSelected,
     clearCartState,
   ])

@@ -69,10 +69,35 @@ public class ProductService : IProductService
         };
 
         var total = await query.CountAsync();
-        var products = await query
+        var productPage = await query
+            .Include(p => p.Variants).ThenInclude(v => v.Inventory)
+            .Include(p => p.Reviews)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(p => new ProductListItemDto(
+            .ToListAsync();
+
+        var products = productPage
+            .Select(p =>
+            {
+                var primaryVariant = p.Variants
+                    .Where(v => v.IsActive)
+                    .OrderBy(v => v.SKU)
+                    .Select(v => new ProductVariantDto(
+                        v.VariantId,
+                        v.SKU,
+                        v.Color,
+                        v.RAM,
+                        v.Storage,
+                        v.PriceOffset,
+                        v.Inventory?.Quantity ?? 0))
+                    .FirstOrDefault();
+
+                var visibleReviews = p.Reviews.Where(r => r.IsVisible).ToList();
+                var avgRating = visibleReviews.Count == 0
+                    ? 0
+                    : Math.Round(visibleReviews.Average(r => (double)r.Rating), 1);
+
+                return new ProductListItemDto(
                 p.ProductId,
                 p.Name,
                 p.Slug,
@@ -81,8 +106,12 @@ public class ProductService : IProductService
                 p.BasePrice,
                 p.SalePrice,
                 p.Category == null ? null : new ProductCategoryDto(p.Category.CategoryId, p.Category.Name, p.Category.Slug),
-                p.IsFeatured))
-            .ToListAsync();
+                p.IsFeatured,
+                primaryVariant,
+                avgRating,
+                visibleReviews.Count);
+            })
+            .ToList();
 
         return ApiResponse<List<ProductListItemDto>>.Ok(products, "OK", new PaginationMeta(page, pageSize, total));
     }

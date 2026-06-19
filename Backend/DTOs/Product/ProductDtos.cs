@@ -15,7 +15,10 @@ public record ProductListItemDto(
     decimal BasePrice,
     decimal? SalePrice,
     ProductCategoryDto? Category,
-    bool IsFeatured);
+    bool IsFeatured,
+    ProductVariantDto? PrimaryVariant,
+    double AvgRating,
+    int RatingCount);
 
 public record ProductDetailDto(
     Guid ProductId,

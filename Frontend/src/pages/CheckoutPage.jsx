@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, Navigate } from 'react-router-dom'
+import { useNavigate, Navigate, useLocation } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
@@ -13,12 +13,16 @@ import './CheckoutPage.css'
 
 function CheckoutPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const {
+    items,
+    loading,
     selectedItems,
     subtotal,
     originalTotal,
     discount,
     refresh,
+    selectCartItems,
   } = useCart()
   const { user, openLogin, updateUser } = useAuth()
 
@@ -40,6 +44,16 @@ function CheckoutPage() {
     () => addresses.find(item => item.addressId === selectedAddressId),
     [addresses, selectedAddressId],
   )
+  const routeSelectedCartItemIds = useMemo(
+    () => Array.isArray(location.state?.selectedCartItemIds) ? location.state.selectedCartItemIds : [],
+    [location.state],
+  )
+
+  useEffect(() => {
+    if (selectedItems.length === 0 && routeSelectedCartItemIds.length > 0 && items.length > 0) {
+      selectCartItems(routeSelectedCartItemIds)
+    }
+  }, [items.length, routeSelectedCartItemIds, selectedItems.length, selectCartItems])
 
   useEffect(() => {
     if (!userId) return
@@ -121,6 +135,12 @@ function CheckoutPage() {
   }
 
   const handlePlaceOrder = async () => {
+    if (selectedItems.length === 0) {
+      alert('Vui long chon san pham trong gio hang truoc khi dat hang.')
+      navigate('/gio-hang')
+      return
+    }
+
     if (!user) {
       openLogin()
       alert('Bạn cần đăng nhập trước khi đặt hàng.')
@@ -166,6 +186,14 @@ function CheckoutPage() {
     } finally {
       setPlacing(false)
     }
+  }
+
+  if (loading || (selectedItems.length === 0 && routeSelectedCartItemIds.length > 0 && items.length > 0)) {
+    return (
+      <div className="container checkout-page">
+        <p>Dang chuan bi checkout...</p>
+      </div>
+    )
   }
 
   if (selectedItems.length === 0) {

@@ -63,3 +63,6 @@ Backend/appsettings.json
 
 #Không push env
 Frontend/.env
+
+# Tai lieu huong dan demo local
+Gui/

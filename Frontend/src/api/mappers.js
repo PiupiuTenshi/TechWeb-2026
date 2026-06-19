@@ -5,16 +5,7 @@ function fallbackImage(name) {
 }
 
 function displayBrand(product) {
-  const name = product.name || product.productName || ''
-  const brand = product.brand || ''
-  const categorySlug = product.category?.slug || product.categorySlug
-
-  if (categorySlug === 'phone' && name.toLowerCase().includes('iphone')) return 'iPhone'
-  if (categorySlug === 'laptop' && name.toLowerCase().includes('macbook')) return 'MacBook'
-  if (categorySlug === 'accessory' && name.toLowerCase().includes('tai nghe')) return 'Tai nghe'
-  if (categorySlug === 'accessory' && name.toLowerCase().includes('chuột')) return 'Chuột'
-  if (categorySlug === 'accessory' && name.toLowerCase().includes('bàn phím')) return 'Bàn phím'
-  return brand || 'TechShop'
+  return product.brand || ''
 }
 
 function productType(categorySlug) {
@@ -24,7 +15,7 @@ function productType(categorySlug) {
   return 'product'
 }
 
-function parseCapacity(value, fallback = 256) {
+function parseCapacity(value, fallback = null) {
   if (!value) return fallback
   const match = String(value).match(/\d+/)
   return match ? Number(match[0]) : fallback
@@ -51,7 +42,9 @@ export function mapProductSummary(dto) {
   const basePrice = Number(dto.basePrice || 0)
   const salePrice = Number(dto.salePrice || dto.basePrice || 0)
   const categorySlug = dto.category?.slug
-  const product = {
+  const primaryVariant = dto.primaryVariant || dto.variants?.[0]
+
+  return {
     productId: dto.productId,
     id: dto.slug,
     slug: dto.slug,
@@ -65,35 +58,34 @@ export function mapProductSummary(dto) {
     originalPrice: basePrice,
     salePrice,
     discount: discountLabel(basePrice, salePrice),
-    rating: 4.8,
-    ratingCount: 0,
-    installment: 'Trả góp 0% - 12 tháng',
-    storage: 256,
-    ram: 8,
+    rating: Number(dto.avgRating || 0),
+    ratingCount: Number(dto.ratingCount || 0),
+    installment: '',
+    variantId: primaryVariant?.variantId,
+    stock: primaryVariant?.stock || 0,
+    storage: parseCapacity(primaryVariant?.storage),
+    ram: parseCapacity(primaryVariant?.ram),
     series: '',
     isFeatured: dto.isFeatured,
   }
-
-  return product
 }
 
 export function mapProductDetail(dto) {
   const summary = mapProductSummary(dto)
   const firstVariant = dto.variants?.[0]
-  const storage = parseCapacity(firstVariant?.storage, summary.storage)
-  const ram = parseCapacity(firstVariant?.ram, summary.ram)
 
   return {
     ...summary,
     description: dto.description || '',
-    avgRating: dto.avgRating || 0,
-    rating: dto.avgRating || summary.rating,
+    avgRating: Number(dto.avgRating || 0),
+    rating: Number(dto.avgRating || summary.rating || 0),
+    ratingCount: Number(dto.ratingCount || summary.ratingCount || 0),
     images: dto.images || [],
     variants: dto.variants || [],
-    variantId: firstVariant?.variantId,
-    stock: firstVariant?.stock || 0,
-    storage,
-    ram,
+    variantId: firstVariant?.variantId || summary.variantId,
+    stock: firstVariant?.stock || summary.stock || 0,
+    storage: parseCapacity(firstVariant?.storage, summary.storage),
+    ram: parseCapacity(firstVariant?.ram, summary.ram),
     specifications: dto.specifications || [],
   }
 }
@@ -106,7 +98,7 @@ export function mapCartItem(dto, selected = false) {
     variantId: dto.variantId,
     productId: dto.productId,
     slug: dto.productSlug,
-    name: dto.productName || 'Sản phẩm',
+    name: dto.productName || 'San pham',
     image: normalizeImage(dto.thumbnailUrl, dto.productName),
     salePrice: unitPrice,
     originalPrice: unitPrice,

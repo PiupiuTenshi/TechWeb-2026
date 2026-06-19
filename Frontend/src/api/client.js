@@ -1,9 +1,11 @@
-let API_BASE_URL = (import.meta.env.VITE_API_URL || 'https://techshop-backend-8sfu.onrender.com').replace(/\/$/, '')
-const FALLBACK_URLS = [
-  'https://techshop-backend-8sfu.onrender.com',
-  'http://localhost:5000',
-  'https://localhost:7188'
-]
+const DEFAULT_API_URLS = import.meta.env.DEV
+  ? ['http://localhost:5000', 'https://localhost:7188', 'https://techshop-backend-8sfu.onrender.com']
+  : ['https://techshop-backend-8sfu.onrender.com', 'http://localhost:5000', 'https://localhost:7188']
+
+let API_BASE_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URLS[0]).replace(/\/$/, '')
+const FALLBACK_URLS = import.meta.env.VITE_API_URL
+  ? [API_BASE_URL]
+  : DEFAULT_API_URLS.map(url => url.replace(/\/$/, ''))
 
 const AUTH_STORAGE_KEY = 'techshop_auth'
 const SESSION_STORAGE_KEY = 'techshop_session_id'
@@ -26,6 +28,23 @@ function onRefreshed(token) {
   REFRESH_SUBSCRIBERS.length = 0
 }
 
+function parseResponsePayload(text) {
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return { message: text }
+  }
+}
+
+function apiErrorMessage(payload, status) {
+  if (payload?.message) return payload.message
+  if (payload?.error) return payload.error
+  if (status === 404) return 'Endpoint API khong ton tai. Hay restart backend de nap code moi.'
+  if (status === 401) return 'Phien dang nhap da het han. Vui long dang nhap lai.'
+  return 'Khong the ket noi may chu.'
+}
+
 async function _doRefresh() {
   const auth = getAuthState()
   if (!auth?.refreshToken) throw new Error('No refresh token')
@@ -37,7 +56,7 @@ async function _doRefresh() {
   })
 
   const text = await res.text()
-  const data = text ? JSON.parse(text) : null
+  const data = parseResponsePayload(text)
 
   if (!res.ok) {
     clearAuthState()
@@ -109,7 +128,11 @@ async function apiRequest(path, options = {}) {
   let lastError
 
   if (import.meta.env.VITE_API_URL) {
-    response = await fetch(`${API_BASE_URL}${path}`, fetchOptions)
+    try {
+      response = await fetch(`${API_BASE_URL}${path}`, fetchOptions)
+    } catch (err) {
+      throw new ApiError('Khong the ket noi backend local. Kiem tra backend dang chay dung port VITE_API_URL.', 0, err)
+    }
   } else {
     for (const url of FALLBACK_URLS) {
       try {
@@ -127,7 +150,7 @@ async function apiRequest(path, options = {}) {
   setSessionId(responseSessionId)
 
   const text = await response.text()
-  const payload = text ? JSON.parse(text) : null
+  const payload = parseResponsePayload(text)
 
   if (!response.ok) {
     if (response.status === 401 && auth?.refreshToken && !path.toLowerCase().includes('/auth/')) {
@@ -146,9 +169,12 @@ async function apiRequest(path, options = {}) {
         const retrySessionId = retryRes.headers.get('X-Session-Id')
         if (retrySessionId) setSessionId(retrySessionId)
         const retryText = await retryRes.text()
-        const retryPayload = retryText ? JSON.parse(retryText) : null
+        const retryPayload = parseResponsePayload(retryText)
 
         if (!retryRes.ok) {
+          if (retryRes.status === 404) {
+            throw new ApiError(apiErrorMessage(retryPayload, retryRes.status), retryRes.status, retryPayload)
+          }
           throw new ApiError(
             retryPayload?.message || retryPayload?.error || 'Không thể kết nối máy chủ.',
             retryRes.status,

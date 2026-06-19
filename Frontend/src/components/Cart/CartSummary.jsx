@@ -69,7 +69,9 @@ function CartSummary() {
         disabled={!hasSelection}
         id="cart-confirm-btn"
         aria-label="Xác nhận đơn hàng"
-        onClick={() => navigate('/thanh-toan')}
+        onClick={() => navigate('/thanh-toan', {
+          state: { selectedCartItemIds: selectedItems.map(item => item.id) },
+        })}
       >
         Xác nhận đơn
       </button>
