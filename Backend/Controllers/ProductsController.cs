@@ -21,6 +21,7 @@ public class ProductsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetProducts(
+        [FromQuery] string? search,
         [FromQuery] string? category,
         [FromQuery] string? brand,
         [FromQuery] decimal? minPrice,
@@ -29,7 +30,7 @@ public class ProductsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var response = await _productService.GetProductsAsync(category, brand, minPrice, maxPrice, sort, page, pageSize);
+        var response = await _productService.GetProductsAsync(search, category, brand, minPrice, maxPrice, sort, page, pageSize);
         return Ok(response);
     }
 

@@ -10,6 +10,7 @@ namespace TechShop.Backend.Services;
 public class ProductService : IProductService
 {
     private readonly AppDbContext _context;
+    private static readonly char[] _searchDelimiters = new[] { ' ', '\t', '\r', '\n', ',', ';', '-', '_', '/', '\\', '.', '+' };
     private static readonly HashSet<string> _allowedExtensions = new(StringComparer.OrdinalIgnoreCase)
         { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg" };
 
@@ -24,6 +25,7 @@ public class ProductService : IProductService
     }
 
     public async Task<ApiResponse<List<ProductListItemDto>>> GetProductsAsync(
+        string? search,
         string? category,
         string? brand,
         decimal? minPrice,
@@ -50,6 +52,36 @@ public class ProductService : IProductService
             query = query.Where(p => p.Brand != null && p.Brand.ToLower() == brand.ToLower());
         }
 
+        var searchTerm = NormalizeSearchAliases(search?.Trim().ToLower() ?? string.Empty);
+        var searchTokens = string.IsNullOrWhiteSpace(searchTerm)
+            ? Array.Empty<string>()
+            : searchTerm
+                .Split(_searchDelimiters, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(token => token.Length >= 2)
+                .Distinct()
+                .ToArray();
+
+        foreach (var token in searchTokens)
+        {
+            query = query.Where(p =>
+                p.Name.ToLower().Contains(token)
+                || p.Slug.ToLower().Contains(token)
+                || (p.Brand != null && p.Brand.ToLower().Contains(token))
+                || (p.Description != null && p.Description.ToLower().Contains(token))
+                || (p.Tags != null && p.Tags.ToLower().Contains(token))
+                || (p.Category != null && (
+                    p.Category.Name.ToLower().Contains(token)
+                    || p.Category.Slug.ToLower().Contains(token)))
+                || p.Specifications.Any(s =>
+                    s.SpecKey.ToLower().Contains(token)
+                    || s.SpecValue.ToLower().Contains(token))
+                || p.Variants.Any(v => v.IsActive && (
+                    v.SKU.ToLower().Contains(token)
+                    || (v.Color != null && v.Color.ToLower().Contains(token))
+                    || (v.RAM != null && v.RAM.ToLower().Contains(token))
+                    || (v.Storage != null && v.Storage.ToLower().Contains(token)))));
+        }
+
         if (minPrice.HasValue)
         {
             query = query.Where(p => (p.SalePrice ?? p.BasePrice) >= minPrice.Value);
@@ -60,13 +92,24 @@ public class ProductService : IProductService
             query = query.Where(p => (p.SalePrice ?? p.BasePrice) <= maxPrice.Value);
         }
 
-        query = sort switch
+        if (searchTokens.Length > 0 && string.IsNullOrWhiteSpace(sort))
         {
-            "price_asc" => query.OrderBy(p => p.SalePrice ?? p.BasePrice),
-            "price_desc" => query.OrderByDescending(p => p.SalePrice ?? p.BasePrice),
-            "newest" => query.OrderByDescending(p => p.CreatedAt),
-            _ => query.OrderByDescending(p => p.IsFeatured).ThenByDescending(p => p.CreatedAt)
-        };
+            query = query
+                .OrderByDescending(p => p.Name.ToLower().StartsWith(searchTerm!))
+                .ThenByDescending(p => p.Name.ToLower().Contains(searchTerm!))
+                .ThenByDescending(p => p.IsFeatured)
+                .ThenByDescending(p => p.CreatedAt);
+        }
+        else
+        {
+            query = sort switch
+            {
+                "price_asc" => query.OrderBy(p => p.SalePrice ?? p.BasePrice),
+                "price_desc" => query.OrderByDescending(p => p.SalePrice ?? p.BasePrice),
+                "newest" => query.OrderByDescending(p => p.CreatedAt),
+                _ => query.OrderByDescending(p => p.IsFeatured).ThenByDescending(p => p.CreatedAt)
+            };
+        }
 
         var total = await query.CountAsync();
         var productPage = await query
@@ -114,6 +157,21 @@ public class ProductService : IProductService
             .ToList();
 
         return ApiResponse<List<ProductListItemDto>>.Ok(products, "OK", new PaginationMeta(page, pageSize, total));
+    }
+
+    private static string NormalizeSearchAliases(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+        return value
+            .Replace("dien thoai", "phone")
+            .Replace("điện thoại", "phone")
+            .Replace("phu kien", "accessory")
+            .Replace("phụ kiện", "accessory")
+            .Replace("may tinh xach tay", "laptop")
+            .Replace("máy tính xách tay", "laptop")
+            .Replace("ban phim", "bàn phím")
+            .Replace("chuot", "chuột");
     }
 
     public async Task<ApiResponse<ProductDetailDto>> GetProductAsync(string slug)

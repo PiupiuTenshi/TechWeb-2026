@@ -16,6 +16,7 @@ import LaptopPage from './pages/LaptopPage'
 import NotFound from './pages/NotFound'
 import PhonePage from './pages/PhonePage'
 import ProductDetailPage from './pages/ProductDetailPage'
+import SearchPage from './pages/SearchPage'
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -57,6 +58,7 @@ function App() {
                 <Route path="/laptop" element={<LaptopPage />} />
                 <Route path="/laptop/:brand" element={<BrandSeriesPage type="laptop" />} />
                 <Route path="/phu-kien" element={<AccessoryPage />} />
+                <Route path="/tim-kiem" element={<SearchPage />} />
                 <Route path="/san-pham/:id" element={<ProductDetailPage />} />
                 <Route path="/gio-hang" element={<CartPage />} />
                 <Route path="/thanh-toan" element={<CheckoutPage />} />

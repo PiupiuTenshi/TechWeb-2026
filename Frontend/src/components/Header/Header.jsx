@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Search, ShoppingCart, User, Menu, Smartphone, Laptop, Headphones } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
 import { useAuth } from '../../context/AuthContext'
@@ -9,6 +9,7 @@ function Header() {
   const [searchValue, setSearchValue] = useState('')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuRef  = useRef(null)
+  const location = useLocation()
   const navigate = useNavigate()
   const { totalItems } = useCart()
   const { openLogin, user } = useAuth()
@@ -23,6 +24,22 @@ function Header() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (location.pathname === '/tim-kiem') {
+      const params = new URLSearchParams(location.search)
+      setSearchValue(params.get('q') || '')
+    } else {
+      setSearchValue('')
+    }
+  }, [location.pathname, location.search])
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault()
+    const query = searchValue.trim()
+    if (!query) return
+    navigate(`/tim-kiem?q=${encodeURIComponent(query)}`)
+  }
 
   return (
     <header className="header">
@@ -71,24 +88,18 @@ function Header() {
         </div>
 
         {/* Search */}
-        <div className="header-search">
-          <span className="header-search-icon">
+        <form className="header-search" onSubmit={handleSearchSubmit}>
+          <button type="submit" className="header-search-icon" aria-label="Tìm kiếm">
             <Search size={16} />
-          </span>
+          </button>
           <input
             id="header-search-input"
             type="text"
             placeholder="Bạn cần tìm gì?"
             value={searchValue}
             onChange={e => setSearchValue(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && searchValue.trim()) {
-                navigate(`/laptop?search=${encodeURIComponent(searchValue.trim())}`)
-                setSearchValue('')
-              }
-            }}
           />
-        </div>
+        </form>
 
         {/* Actions */}
         <div className="header-actions">

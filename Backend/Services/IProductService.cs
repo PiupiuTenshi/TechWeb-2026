@@ -9,7 +9,7 @@ public record ProductUpdatedResult(Guid ProductId);
 
 public interface IProductService
 {
-    Task<ApiResponse<List<ProductListItemDto>>> GetProductsAsync(string? category, string? brand, decimal? minPrice, decimal? maxPrice, string? sort, int page, int pageSize);
+    Task<ApiResponse<List<ProductListItemDto>>> GetProductsAsync(string? search, string? category, string? brand, decimal? minPrice, decimal? maxPrice, string? sort, int page, int pageSize);
     Task<ApiResponse<ProductDetailDto>> GetProductAsync(string slug);
     Task<ApiResponse<ProductCreatedResult>> CreateProductAsync(CreateProductDto dto);
     Task<ApiResponse<ProductUpdatedResult>> UpdateProductAsync(Guid id, UpdateProductDto dto);
