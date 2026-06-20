@@ -51,6 +51,59 @@ public class AuthService : IAuthService
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
+        try
+        {
+            Console.WriteLine("[MAIL] Preparing Brevo API request for registration");
+
+            var brevoApiKey = _configuration["Brevo:ApiKey"];
+            var senderEmail = _configuration["Brevo:SenderEmail"] ?? "no-reply@techshop.vn";
+            var senderName = _configuration["Brevo:SenderName"] ?? "TechShop";
+
+            if (!string.IsNullOrEmpty(brevoApiKey))
+            {
+                var requestData = new
+                {
+                    sender = new { name = senderName, email = senderEmail },
+                    to = new[] { new { email = email, name = user.FullName } },
+                    subject = "Chào mừng bạn đến với TechShop",
+                    textContent = $"Xin chào {user.FullName},\n\n" +
+                                  $"Chúc mừng bạn đã đăng ký thành công tài khoản tại TechShop.\n" +
+                                  $"Trải nghiệm mua sắm ngay hôm nay!\n\n" +
+                                  $"Nếu bạn không thực hiện thao tác này, vui lòng đến trang chủ và cập nhật lại mật khẩu\n"+
+                                  $"Tại https://techshop-55gp.vercel.app/\n"+
+                                  $"Trân trọng,\nĐội ngũ TechShop"
+                };
+
+                using (var client = new System.Net.Http.HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("api-key", brevoApiKey);
+                    
+                    var jsonContent = System.Text.Json.JsonSerializer.Serialize(requestData);
+                    var content = new System.Net.Http.StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+                    
+                    Console.WriteLine("[MAIL] Sending via Brevo REST API...");
+                    var response = await client.PostAsync("https://api.brevo.com/v3/smtp/email", content);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        var errorContent = await response.Content.ReadAsStringAsync();
+                        Console.WriteLine($"[BREVO_ERROR] {errorContent}");
+                        throw new Exception($"Lỗi gửi email qua Brevo API: {response.StatusCode}");
+                    }
+                    
+                    Console.WriteLine("[MAIL] Sent registration email successfully via Brevo");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("=================================");
+            Console.WriteLine("EMAIL SEND FAILED ON REGISTER");
+            Console.WriteLine(ex.Message);
+            Console.WriteLine(ex.ToString());
+            Console.WriteLine("=================================");
+        }
+
         return ApiResponse<object>.Ok(ToUserDto(user, "Customer"), "Dang ky thanh cong.");
     }
 
